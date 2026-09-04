@@ -87,6 +87,11 @@ fn is_sftp_connected(pool: State<'_, Arc<SftpPool>>, session_id: String) -> bool
 }
 
 #[tauri::command]
+fn get_remote_home(pool: State<'_, Arc<SftpPool>>, session_id: String) -> Result<String, String> {
+    pool.get_remote_home(&session_id)
+}
+
+#[tauri::command]
 fn read_remote_dir(
     pool: State<'_, Arc<SftpPool>>,
     session_id: String,
@@ -207,6 +212,7 @@ pub fn run() {
             connect_sftp,
             disconnect_sftp,
             is_sftp_connected,
+            get_remote_home,
             read_remote_dir,
             create_remote_dir,
             delete_remote_item,

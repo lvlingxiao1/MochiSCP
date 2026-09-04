@@ -36,7 +36,7 @@ export function App() {
   const [localShowHidden, setLocalShowHidden] = useState(false);
 
   // Remote Pane State
-  const [remotePath, setRemotePath] = useState<string>('/');
+  const [remotePath, setRemotePath] = useState<string>('~');
   const [remoteItems, setRemoteItems] = useState<FileItem[]>([]);
   const [isRemoteLoading, setIsRemoteLoading] = useState(false);
   const [remoteShowHidden, setRemoteShowHidden] = useState(false);
@@ -110,10 +110,19 @@ export function App() {
 
   // Load Remote Directory
   const loadRemoteDirectory = useCallback(
-    async (path: string) => {
+    async (rawPath: string) => {
       if (!activeSession || !isConnected) return;
       setIsRemoteLoading(true);
       try {
+        let path = rawPath;
+        if (!path || path === '~' || path === '.') {
+          try {
+            path = await ipc.getRemoteHome(activeSession.id);
+          } catch {
+            path = '/';
+          }
+        }
+
         const items = await ipc.readRemoteDir(activeSession.id, path, remoteShowHidden);
         setRemoteItems(items);
         setRemotePath(path);
@@ -205,7 +214,14 @@ export function App() {
       setActiveSession(session);
       setIsConnected(true);
 
-      const targetRemote = session.initial_remote_path || '/';
+      let targetRemote = session.initial_remote_path?.trim();
+      if (!targetRemote || targetRemote === '~' || targetRemote === '.') {
+        try {
+          targetRemote = await ipc.getRemoteHome(session.id);
+        } catch {
+          targetRemote = '/';
+        }
+      }
       setRemotePath(targetRemote);
       addToast('success', `Connected to ${session.name} (${session.host})`);
     } catch (e: any) {
@@ -390,6 +406,7 @@ export function App() {
           drives={drives}
           showHidden={localShowHidden}
           onNavigate={(path) => loadLocalDirectory(path)}
+          onGoHome={() => platform && loadLocalDirectory(platform.home_dir)}
           onRefresh={() => loadLocalDirectory(localPath)}
           onToggleHidden={() => setLocalShowHidden(!localShowHidden)}
           onTransferItem={(item) => handleTransferItem(item, false)}
@@ -408,6 +425,7 @@ export function App() {
             isLoading={isRemoteLoading}
             showHidden={remoteShowHidden}
             onNavigate={(path) => loadRemoteDirectory(path)}
+            onGoHome={() => loadRemoteDirectory('~')}
             onRefresh={() => loadRemoteDirectory(remotePath)}
             onToggleHidden={() => setRemoteShowHidden(!remoteShowHidden)}
             onTransferItem={(item) => handleTransferItem(item, true)}

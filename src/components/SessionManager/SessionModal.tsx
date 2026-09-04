@@ -359,12 +359,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             </div>
 
             <div className="space-y-1 pt-1">
-              <label className="text-xs text-slate-400 font-medium">Initial Remote Directory (Optional)</label>
+              <label className="text-xs text-slate-400 font-medium">
+                Initial Remote Directory <span className="text-slate-500 font-normal">(Default: User Home ~)</span>
+              </label>
               <input
                 type="text"
                 value={initialPath}
                 onChange={(e) => setInitialPath(e.target.value)}
-                placeholder="/var/www/html or /home/ubuntu"
+                placeholder="Leave empty for User Home (~), or e.g. /var/www"
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
               />
             </div>

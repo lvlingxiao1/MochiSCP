@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FolderUp,
+  Home,
   RefreshCw,
   FolderPlus,
   Eye,
@@ -27,6 +28,7 @@ interface FilePaneProps {
   drives?: DriveInfo[];
   showHidden: boolean;
   onNavigate: (path: string) => void;
+  onGoHome?: () => void;
   onRefresh: () => void;
   onToggleHidden: () => void;
   onTransferItem: (item: FileItem) => void;
@@ -46,6 +48,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
   drives,
   showHidden,
   onNavigate,
+  onGoHome,
   onRefresh,
   onToggleHidden,
   onTransferItem,
@@ -210,6 +213,13 @@ export const FilePane: React.FC<FilePaneProps> = ({
             </div>
           )}
 
+          <button
+            onClick={() => (onGoHome ? onGoHome() : onNavigate('~'))}
+            title="Home Directory (~)"
+            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors"
+          >
+            <Home className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleGoUp}
             title="Parent Directory (Up)"

@@ -91,13 +91,27 @@ impl SftpPool {
         false
     }
 
+    pub fn get_remote_home(&self, session_id: &str) -> Result<String, String> {
+        let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
+        let sess = sessions.get(session_id).ok_or("Not connected")?;
+        let sftp = sess.sftp().map_err(|e| format!("SFTP subsystem error: {}", e))?;
+        let home = sftp.realpath(Path::new(".")).map_err(|e| e.to_string())?;
+        Ok(home.to_string_lossy().to_string())
+    }
+
     pub fn read_dir(&self, session_id: &str, remote_path: &str, show_hidden: bool) -> Result<Vec<FileItem>, String> {
         let sessions = self.sessions.lock().map_err(|e| e.to_string())?;
         let sess = sessions.get(session_id).ok_or("Not connected")?;
         let sftp = sess.sftp().map_err(|e| format!("SFTP subsystem error: {}", e))?;
 
-        let clean_path = if remote_path.is_empty() { "." } else { remote_path };
-        let path = Path::new(clean_path);
+        let resolved_path = if remote_path.is_empty() || remote_path == "." || remote_path == "~" {
+            sftp.realpath(Path::new("."))
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| "/".to_string())
+        } else {
+            remote_path.to_string()
+        };
+        let path = Path::new(&resolved_path);
 
         let entries = sftp.readdir(path).map_err(|e| format!("Failed to read remote dir: {}", e))?;
         let mut items = Vec::new();
@@ -116,10 +130,10 @@ impl SftpPool {
                 continue;
             }
 
-            let full_path = if clean_path == "/" {
+            let full_path = if resolved_path == "/" {
                 format!("/{}", file_name)
             } else {
-                format!("{}/{}", clean_path.trim_end_matches('/'), file_name)
+                format!("{}/{}", resolved_path.trim_end_matches('/'), file_name)
             };
 
             let is_dir = stat.is_dir();

@@ -27,6 +27,8 @@ export const ipc = {
   disconnectSftp: (sessionId: string) => invoke<void>('disconnect_sftp', { sessionId }),
   isSftpConnected: (sessionId: string) =>
     invoke<boolean>('is_sftp_connected', { sessionId }),
+  getRemoteHome: (sessionId: string) =>
+    invoke<string>('get_remote_home', { sessionId }),
   readRemoteDir: (sessionId: string, remotePath: string, showHidden: boolean) =>
     invoke<FileItem[]>('read_remote_dir', { sessionId, remotePath, showHidden }),
   createRemoteDir: (sessionId: string, remotePath: string) =>
