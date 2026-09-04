@@ -1,0 +1,497 @@
+import { useState, useEffect, useCallback } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import {
+  PlatformInfo,
+  SessionConfig,
+  FileItem,
+  TransferTask,
+  DriveInfo,
+} from './types';
+import { ipc } from './utils/ipc';
+import { TitleBar } from './components/TitleBar';
+import { FilePane } from './components/DualPane/FilePane';
+import { SessionModal } from './components/SessionManager/SessionModal';
+import { QueueDrawer } from './components/TransferQueue/QueueDrawer';
+import { ChmodModal } from './components/Modals/ChmodModal';
+import { NewFolderModal } from './components/Modals/NewFolderModal';
+import { DeleteConfirmModal } from './components/Modals/DeleteConfirmModal';
+import { RenameModal } from './components/Modals/RenameModal';
+import { ToastContainer, ToastMessage } from './components/Toast';
+import { Server, Zap } from 'lucide-react';
+
+export function App() {
+  // Platform & Environment
+  const [platform, setPlatform] = useState<PlatformInfo | null>(null);
+  const [drives, setDrives] = useState<DriveInfo[]>([]);
+
+  // Session & Connection
+  const [sessions, setSessions] = useState<SessionConfig[]>([]);
+  const [activeSession, setActiveSession] = useState<SessionConfig | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Local Pane State
+  const [localPath, setLocalPath] = useState<string>('');
+  const [localItems, setLocalItems] = useState<FileItem[]>([]);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+  const [localShowHidden, setLocalShowHidden] = useState(false);
+
+  // Remote Pane State
+  const [remotePath, setRemotePath] = useState<string>('/');
+  const [remoteItems, setRemoteItems] = useState<FileItem[]>([]);
+  const [isRemoteLoading, setIsRemoteLoading] = useState(false);
+  const [remoteShowHidden, setRemoteShowHidden] = useState(false);
+
+  // Transfers & Queue
+  const [transfers, setTransfers] = useState<TransferTask[]>([]);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+
+  // Modals
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [chmodTarget, setChmodTarget] = useState<FileItem | null>(null);
+  const [newFolderTarget, setNewFolderTarget] = useState<{ isRemote: boolean; parentPath: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ item: FileItem; isRemote: boolean } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{ item: FileItem; isRemote: boolean } | null>(null);
+
+  // Toasts
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const addToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, type, message }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Initialize platform info, drives, and local directory
+  useEffect(() => {
+    async function init() {
+      try {
+        const plat = await ipc.getPlatformInfo();
+        setPlatform(plat);
+        setLocalPath(plat.home_dir);
+
+        const drvs = await ipc.getLocalDrives();
+        setDrives(drvs);
+
+        const savedSessions = await ipc.listSessions();
+        setSessions(savedSessions);
+      } catch (e: any) {
+        console.error('Init error:', e);
+      }
+    }
+    init();
+  }, []);
+
+  // Load Local Directory
+  const loadLocalDirectory = useCallback(
+    async (path: string) => {
+      if (!path) return;
+      setIsLocalLoading(true);
+      try {
+        const items = await ipc.readLocalDir(path, localShowHidden);
+        setLocalItems(items);
+        setLocalPath(path);
+      } catch (e: any) {
+        addToast('error', `Failed to read local dir: ${e}`);
+      } finally {
+        setIsLocalLoading(false);
+      }
+    },
+    [localShowHidden, addToast]
+  );
+
+  useEffect(() => {
+    if (localPath) {
+      loadLocalDirectory(localPath);
+    }
+  }, [localPath, localShowHidden, loadLocalDirectory]);
+
+  // Load Remote Directory
+  const loadRemoteDirectory = useCallback(
+    async (path: string) => {
+      if (!activeSession || !isConnected) return;
+      setIsRemoteLoading(true);
+      try {
+        const items = await ipc.readRemoteDir(activeSession.id, path, remoteShowHidden);
+        setRemoteItems(items);
+        setRemotePath(path);
+      } catch (e: any) {
+        addToast('error', `Failed to read remote dir: ${e}`);
+      } finally {
+        setIsRemoteLoading(false);
+      }
+    },
+    [activeSession, isConnected, remoteShowHidden, addToast]
+  );
+
+  useEffect(() => {
+    if (isConnected && activeSession) {
+      loadRemoteDirectory(remotePath);
+    }
+  }, [remotePath, remoteShowHidden, isConnected, activeSession, loadRemoteDirectory]);
+
+  // Listen to Tauri backend events (transfer progress & auto-synced files)
+  useEffect(() => {
+    let unlistenProgress: (() => void) | undefined;
+    let unlistenSynced: (() => void) | undefined;
+
+    async function setupListeners() {
+      unlistenProgress = await listen<any>('transfer-progress', (event) => {
+        const payload = event.payload;
+        setTransfers((prev) =>
+          prev.map((t) => {
+            if (t.id === payload.task_id) {
+              return {
+                ...t,
+                transferred: payload.transferred,
+                size: payload.total || t.size,
+                speed: payload.speed,
+                status: payload.status,
+                error: payload.error,
+              };
+            }
+            return t;
+          })
+        );
+
+        if (payload.status === 'completed') {
+          // Auto-refresh panes
+          if (localPath) loadLocalDirectory(localPath);
+          if (isConnected && remotePath) loadRemoteDirectory(remotePath);
+        }
+      });
+
+      unlistenSynced = await listen<any>('file-auto-synced', (event) => {
+        const payload = event.payload;
+        addToast('success', `Saved & auto-synced "${payload.file_name}" to remote server!`);
+        if (isConnected && remotePath) {
+          loadRemoteDirectory(remotePath);
+        }
+      });
+    }
+
+    setupListeners();
+
+    return () => {
+      if (unlistenProgress) unlistenProgress();
+      if (unlistenSynced) unlistenSynced();
+    };
+  }, [localPath, remotePath, isConnected, loadLocalDirectory, loadRemoteDirectory, addToast]);
+
+  // Session Handlers
+  const handleSaveSession = async (session: SessionConfig, secret?: string) => {
+    await ipc.saveSession(session, secret);
+    const updated = await ipc.listSessions();
+    setSessions(updated);
+    addToast('success', `Session "${session.name}" saved.`);
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    await ipc.deleteSession(sessionId);
+    const updated = await ipc.listSessions();
+    setSessions(updated);
+    addToast('info', 'Session deleted.');
+  };
+
+  const handleConnect = async (session: SessionConfig, secret?: string) => {
+    try {
+      if (activeSession) {
+        await ipc.disconnectSftp(activeSession.id);
+      }
+
+      await ipc.connectSftp(session, secret);
+      setActiveSession(session);
+      setIsConnected(true);
+
+      const targetRemote = session.initial_remote_path || '/';
+      setRemotePath(targetRemote);
+      addToast('success', `Connected to ${session.name} (${session.host})`);
+    } catch (e: any) {
+      setIsConnected(false);
+      addToast('error', `Connection failed: ${e}`);
+      throw e;
+    }
+  };
+
+  // Transfer Handlers (Upload / Download)
+  const handleTransferItem = async (item: FileItem, isRemoteSource: boolean) => {
+    if (!isConnected || !activeSession) {
+      addToast('error', 'Connect to an SFTP server first to transfer files.');
+      return;
+    }
+
+    const taskId = crypto.randomUUID();
+    const isUpload = !isRemoteSource;
+
+    let src = item.path;
+    let dest = isUpload
+      ? `${remotePath === '/' ? '' : remotePath}/${item.name}`
+      : `${localPath === '/' ? '' : localPath}/${item.name}`;
+
+    const newTask: TransferTask = {
+      id: taskId,
+      name: item.name,
+      local_path: isUpload ? src : dest,
+      remote_path: isUpload ? dest : src,
+      direction: isUpload ? 'upload' : 'download',
+      size: item.size,
+      transferred: 0,
+      speed: 0,
+      status: 'transferring',
+      started_at: Date.now(),
+    };
+
+    setTransfers((prev) => [newTask, ...prev]);
+    setIsQueueOpen(true);
+
+    try {
+      if (isUpload) {
+        await ipc.uploadFile(activeSession.id, src, dest, taskId);
+      } else {
+        await ipc.downloadFile(activeSession.id, src, dest, taskId);
+      }
+      addToast('success', `Finished ${isUpload ? 'upload' : 'download'}: ${item.name}`);
+    } catch (e: any) {
+      addToast('error', `Transfer failed: ${e}`);
+      setTransfers((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: 'failed', error: e.toString() } : t))
+      );
+    }
+  };
+
+  // Remote File Edit & Auto-Sync (WinSCP Killer Feature)
+  const handleEditRemoteItem = async (item: FileItem) => {
+    if (!isConnected || !activeSession) return;
+    try {
+      addToast('info', `Opening "${item.name}" in external editor...`);
+      await ipc.editRemoteFile(activeSession.id, item.path);
+      addToast('success', `Watching "${item.name}" - edits will auto-sync on save!`);
+    } catch (e: any) {
+      addToast('error', `Failed to open file: ${e}`);
+    }
+  };
+
+  // Terminal Launcher
+  const handleOpenTerminal = async () => {
+    if (!activeSession) return;
+    try {
+      await ipc.openSshTerminal(
+        activeSession.host,
+        activeSession.port,
+        activeSession.username,
+        remotePath
+      );
+    } catch (e: any) {
+      addToast('error', `Failed to launch terminal: ${e}`);
+    }
+  };
+
+  // CRUD Operations (New Folder, Rename, Delete, Chmod)
+  const handleCreateFolder = async (name: string) => {
+    if (!newFolderTarget) return;
+    const { isRemote, parentPath } = newFolderTarget;
+    const separator = isRemote ? '/' : platform?.sep || '/';
+    const targetPath = `${parentPath.endsWith(separator) ? parentPath : parentPath + separator}${name}`;
+
+    try {
+      if (isRemote && activeSession) {
+        await ipc.createRemoteDir(activeSession.id, targetPath);
+        loadRemoteDirectory(parentPath);
+      } else {
+        await ipc.createLocalDir(targetPath);
+        loadLocalDirectory(parentPath);
+      }
+      addToast('success', `Created folder "${name}"`);
+    } catch (e: any) {
+      addToast('error', `Failed to create folder: ${e}`);
+    }
+  };
+
+  const handleRenameItem = async (newName: string) => {
+    if (!renameTarget) return;
+    const { item, isRemote } = renameTarget;
+    const separator = isRemote ? '/' : platform?.sep || '/';
+    const parentDir = item.path.substring(0, item.path.lastIndexOf(separator)) || separator;
+    const targetPath = `${parentDir.endsWith(separator) ? parentDir : parentDir + separator}${newName}`;
+
+    try {
+      if (isRemote && activeSession) {
+        await ipc.renameRemoteItem(activeSession.id, item.path, targetPath);
+        loadRemoteDirectory(remotePath);
+      } else {
+        await ipc.renameLocalItem(item.path, targetPath);
+        loadLocalDirectory(localPath);
+      }
+      addToast('success', `Renamed to "${newName}"`);
+    } catch (e: any) {
+      addToast('error', `Rename failed: ${e}`);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteTarget) return;
+    const { item, isRemote } = deleteTarget;
+
+    try {
+      if (isRemote && activeSession) {
+        await ipc.deleteRemoteItem(activeSession.id, item.path, item.is_dir);
+        loadRemoteDirectory(remotePath);
+        addToast('success', `Deleted "${item.name}" from server.`);
+      } else {
+        await ipc.deleteLocalItem(item.path, false);
+        loadLocalDirectory(localPath);
+        addToast('success', `Moved "${item.name}" to Trash.`);
+      }
+    } catch (e: any) {
+      addToast('error', `Delete failed: ${e}`);
+    }
+  };
+
+  const handleApplyChmod = async (mode: number) => {
+    if (!chmodTarget || !activeSession) return;
+    try {
+      await ipc.chmodRemoteItem(activeSession.id, chmodTarget.path, mode);
+      loadRemoteDirectory(remotePath);
+      addToast('success', `Updated permissions to 0${mode.toString(8)}`);
+    } catch (e: any) {
+      addToast('error', `Chmod failed: ${e}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100">
+      {/* Top macOS Title Bar */}
+      <TitleBar
+        platform={platform}
+        activeSession={activeSession}
+        isConnected={isConnected}
+        activeTransfersCount={transfers.filter((t) => t.status === 'transferring').length}
+        onOpenSessionModal={() => setIsSessionModalOpen(true)}
+        onToggleQueueDrawer={() => setIsQueueOpen(!isQueueOpen)}
+        isQueueOpen={isQueueOpen}
+        onOpenTerminal={handleOpenTerminal}
+        onRefreshAll={() => {
+          if (localPath) loadLocalDirectory(localPath);
+          if (isConnected && remotePath) loadRemoteDirectory(remotePath);
+        }}
+      />
+
+      {/* Main Dual-Pane Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Pane: Local Filesystem */}
+        <FilePane
+          title={`Local: ${platform?.os === 'macos' ? 'Mac' : 'Computer'}`}
+          isRemote={false}
+          currentPath={localPath}
+          items={localItems}
+          isLoading={isLocalLoading}
+          drives={drives}
+          showHidden={localShowHidden}
+          onNavigate={(path) => loadLocalDirectory(path)}
+          onRefresh={() => loadLocalDirectory(localPath)}
+          onToggleHidden={() => setLocalShowHidden(!localShowHidden)}
+          onTransferItem={(item) => handleTransferItem(item, false)}
+          onNewFolder={() => setNewFolderTarget({ isRemote: false, parentPath: localPath })}
+          onRenameItem={(item) => setRenameTarget({ item, isRemote: false })}
+          onDeleteItem={(item) => setDeleteTarget({ item, isRemote: false })}
+        />
+
+        {/* Right Pane: Remote SFTP Filesystem */}
+        {isConnected && activeSession ? (
+          <FilePane
+            title={`Remote: ${activeSession.name} (${activeSession.username}@${activeSession.host})`}
+            isRemote={true}
+            currentPath={remotePath}
+            items={remoteItems}
+            isLoading={isRemoteLoading}
+            showHidden={remoteShowHidden}
+            onNavigate={(path) => loadRemoteDirectory(path)}
+            onRefresh={() => loadRemoteDirectory(remotePath)}
+            onToggleHidden={() => setRemoteShowHidden(!remoteShowHidden)}
+            onTransferItem={(item) => handleTransferItem(item, true)}
+            onEditItem={handleEditRemoteItem}
+            onNewFolder={() => setNewFolderTarget({ isRemote: true, parentPath: remotePath })}
+            onRenameItem={(item) => setRenameTarget({ item, isRemote: true })}
+            onDeleteItem={(item) => setDeleteTarget({ item, isRemote: true })}
+            onChmodItem={(item) => setChmodTarget(item)}
+          />
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-slate-900/40 p-8 text-center select-none border-l border-slate-800">
+            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-4 shadow-lg shadow-sky-500/5">
+              <Server className="w-8 h-8" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-200 mb-1">
+              No Remote Host Connected
+            </h3>
+            <p className="text-xs text-slate-400 max-w-sm mb-5 leading-relaxed">
+              Connect to an SFTP/SSH server to browse remote directories, transfer files, and edit code seamlessly.
+            </p>
+            <button
+              onClick={() => setIsSessionModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-md shadow-sky-500/25 transition-all active:scale-95"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>Open Sessions & Connect</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Transfer Queue Drawer */}
+      <QueueDrawer
+        isOpen={isQueueOpen}
+        tasks={transfers}
+        onToggle={() => setIsQueueOpen(!isQueueOpen)}
+        onClearCompleted={() => setTransfers((prev) => prev.filter((t) => t.status !== 'completed'))}
+      />
+
+      {/* Modals */}
+      <SessionModal
+        isOpen={isSessionModalOpen}
+        sessions={sessions}
+        onClose={() => setIsSessionModalOpen(false)}
+        onSaveSession={handleSaveSession}
+        onDeleteSession={handleDeleteSession}
+        onConnect={handleConnect}
+        onGetSecret={ipc.getSessionSecret}
+      />
+
+      <ChmodModal
+        isOpen={!!chmodTarget}
+        item={chmodTarget}
+        onClose={() => setChmodTarget(null)}
+        onApply={handleApplyChmod}
+      />
+
+      <NewFolderModal
+        isOpen={!!newFolderTarget}
+        parentPath={newFolderTarget?.parentPath || ''}
+        isRemote={newFolderTarget?.isRemote || false}
+        onClose={() => setNewFolderTarget(null)}
+        onCreate={handleCreateFolder}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        item={deleteTarget?.item || null}
+        isRemote={deleteTarget?.isRemote || false}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteItem}
+      />
+
+      <RenameModal
+        isOpen={!!renameTarget}
+        item={renameTarget?.item || null}
+        onClose={() => setRenameTarget(null)}
+        onRename={handleRenameItem}
+      />
+
+      {/* Toast Notification Stack */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </div>
+  );
+}
+
+export default App;
