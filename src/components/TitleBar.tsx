@@ -5,6 +5,7 @@ import {
   Layers,
   RefreshCw,
   Server,
+  Code2,
 } from 'lucide-react';
 import { PlatformInfo, SessionConfig } from '../types';
 
@@ -18,6 +19,7 @@ interface TitleBarProps {
   isQueueOpen: boolean;
   onOpenTerminal: () => void;
   onRefreshAll: () => void;
+  onOpenDevtools?: () => void;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
@@ -30,6 +32,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   isQueueOpen,
   onOpenTerminal,
   onRefreshAll,
+  onOpenDevtools,
 }) => {
   const isMac = platform?.os === 'macos';
 
@@ -75,6 +78,16 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         >
           <RefreshCw className="w-4 h-4" />
         </button>
+
+        {onOpenDevtools && (
+          <button
+            onClick={onOpenDevtools}
+            title="Open Web Inspector & Console Logs (F12 / Cmd+Opt+I)"
+            className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+          >
+            <Code2 className="w-4 h-4 text-slate-400 hover:text-sky-400" />
+          </button>
+        )}
 
         {isConnected && activeSession && (
           <button

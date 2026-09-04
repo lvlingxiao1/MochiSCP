@@ -256,6 +256,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
       items: itemsToDrag,
     };
 
+    console.log('[SkySCP] Drag started from', isRemote ? 'remote' : 'local', payload);
     setDragSession(payload);
 
     e.dataTransfer.effectAllowed = 'copy';
@@ -264,10 +265,13 @@ export const FilePane: React.FC<FilePaneProps> = ({
       e.dataTransfer.setData('text/plain', jsonStr);
       e.dataTransfer.setData('text', jsonStr);
       e.dataTransfer.setData('application/json', jsonStr);
-    } catch {}
+    } catch (err) {
+      console.warn('[SkySCP] dataTransfer.setData error:', err);
+    }
   };
 
   const handleDragEnd = () => {
+    console.log('[SkySCP] Drag ended');
     setDragSession(null);
     dragCounterRef.current = 0;
     setIsDragOver(false);
@@ -319,20 +323,29 @@ export const FilePane: React.FC<FilePaneProps> = ({
         try {
           payload = JSON.parse(raw);
         } catch (err) {
-          console.error('Failed to parse dropped data:', err);
+          console.error('[SkySCP] Failed to parse dropped data:', err);
         }
       }
     }
 
+    console.log('[SkySCP] Drop received on pane:', {
+      pane: isRemote ? 'remote' : 'local',
+      destination,
+      payload,
+    });
+
     setDragSession(null);
 
     if (!payload || !payload.items || payload.items.length === 0) {
+      console.warn('[SkySCP] Drop payload was empty');
       return;
     }
 
     const isFromRemote = payload.source === 'remote';
     if (isFromRemote !== isRemote) {
       onTransferItems(payload.items, isFromRemote, destination);
+    } else {
+      console.log('[SkySCP] Dropped within same pane, ignored');
     }
   };
 

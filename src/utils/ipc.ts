@@ -51,4 +51,5 @@ export const ipc = {
     invoke<string>('edit_remote_file', { sessionId, remotePath }),
   openSshTerminal: (host: string, port: number, username: string, remotePath?: string) =>
     invoke<void>('open_ssh_terminal', { host, port, username, remotePath: remotePath || null }),
+  openDevtools: () => invoke<void>('open_devtools'),
 };

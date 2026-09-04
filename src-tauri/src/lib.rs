@@ -191,6 +191,12 @@ fn open_ssh_terminal(
     terminal::open_ssh_terminal(&host, port, &username, remote_path.as_deref())
 }
 
+#[tauri::command]
+fn open_devtools(window: tauri::WebviewWindow) {
+    #[cfg(debug_assertions)]
+    window.open_devtools();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let sftp_pool = Arc::new(SftpPool::new());
@@ -199,6 +205,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(sftp_pool)
         .invoke_handler(tauri::generate_handler![
+            open_devtools,
             get_platform_info,
             get_local_drives,
             read_local_dir,

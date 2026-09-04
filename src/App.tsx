@@ -250,6 +250,13 @@ export function App() {
     isRemoteSource: boolean,
     targetDir?: string
   ) => {
+    console.log('[SkySCP] handleTransferItems triggered:', {
+      count: items.length,
+      isRemoteSource,
+      targetDir,
+      isConnected,
+      activeSession: activeSession?.name,
+    });
     if (!isConnected || !activeSession) {
       addToast('error', 'Connect to an SFTP server first to transfer files.');
       return;
@@ -413,6 +420,17 @@ export function App() {
     }
   };
 
+  // Global DevTools shortcut (F12 or Cmd+Opt+I)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F12' || (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'I'))) {
+        ipc.openDevtools();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100">
       {/* Top macOS Title Bar */}
@@ -429,6 +447,7 @@ export function App() {
           if (localPath) loadLocalDirectory(localPath);
           if (isConnected && remotePath) loadRemoteDirectory(remotePath);
         }}
+        onOpenDevtools={() => ipc.openDevtools()}
       />
 
       {/* Main Dual-Pane Workspace */}
