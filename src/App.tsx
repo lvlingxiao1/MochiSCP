@@ -451,7 +451,6 @@ export function App() {
           if (localPath) loadLocalDirectory(localPath);
           if (isConnected && remotePath) loadRemoteDirectory(remotePath);
         }}
-        onOpenDevtools={() => ipc.openDevtools()}
       />
 
       {/* Main Dual-Pane Workspace */}
