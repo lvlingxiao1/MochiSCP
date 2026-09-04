@@ -15,6 +15,7 @@ import { AuthType, SessionConfig } from '../../types';
 interface SessionModalProps {
   isOpen: boolean;
   sessions: SessionConfig[];
+  initialSessionId?: string;
   onClose: () => void;
   onSaveSession: (session: SessionConfig, secret?: string) => Promise<void>;
   onDeleteSession: (sessionId: string) => Promise<void>;
@@ -25,13 +26,22 @@ interface SessionModalProps {
 export const SessionModal: React.FC<SessionModalProps> = ({
   isOpen,
   sessions,
+  initialSessionId,
   onClose,
   onSaveSession,
   onDeleteSession,
   onConnect,
   onGetSecret,
 }) => {
-  const [selectedId, setSelectedId] = useState<string>('new');
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    if (initialSessionId && sessions.some((s) => s.id === initialSessionId)) {
+      return initialSessionId;
+    }
+    if (sessions.length > 0) {
+      return sessions[sessions.length - 1].id;
+    }
+    return 'new';
+  });
   const [name, setName] = useState('New Session');
   const [host, setHost] = useState('');
   const [port, setPort] = useState(22);
@@ -45,6 +55,35 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const prevIsOpenRef = React.useRef(isOpen);
+
+  // When modal transitions from closed to open, reset selection to last connected / initial session
+  useEffect(() => {
+    if (!prevIsOpenRef.current && isOpen) {
+      if (initialSessionId && sessions.some((s) => s.id === initialSessionId)) {
+        setSelectedId(initialSessionId);
+      } else if (sessions.length > 0) {
+        setSelectedId(sessions[sessions.length - 1].id);
+      } else {
+        setSelectedId('new');
+      }
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, initialSessionId, sessions]);
+
+  // If currently selected session was deleted while modal is open, fallback safely
+  useEffect(() => {
+    if (!isOpen) return;
+    if (selectedId !== 'new' && !sessions.some((s) => s.id === selectedId)) {
+      if (sessions.length > 0) {
+        setSelectedId(sessions[sessions.length - 1].id);
+      } else {
+        setSelectedId('new');
+      }
+    }
+  }, [sessions, isOpen, selectedId]);
+
+  // When selectedId changes or modal opens, populate form fields
   useEffect(() => {
     if (!isOpen) return;
 
@@ -184,6 +223,11 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 <div
                   key={s.id}
                   onClick={() => setSelectedId(s.id)}
+                  onDoubleClick={() => {
+                    setSelectedId(s.id);
+                    handleConnectClick();
+                  }}
+                  title="Click to select, double-click to connect"
                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer group transition-colors ${
                     selectedId === s.id
                       ? 'bg-slate-800 text-white border border-slate-700 font-medium'
@@ -219,7 +263,15 @@ export const SessionModal: React.FC<SessionModalProps> = ({
           </div>
 
           {/* Right: Form */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4">
+          <div
+            className="flex-1 p-5 overflow-y-auto space-y-4"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isConnecting && !isSaving) {
+                e.preventDefault();
+                handleConnectClick();
+              }
+            }}
+          >
             {errorMsg && (
               <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />

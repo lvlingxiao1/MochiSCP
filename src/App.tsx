@@ -28,6 +28,13 @@ export function App() {
   const [sessions, setSessions] = useState<SessionConfig[]>([]);
   const [activeSession, setActiveSession] = useState<SessionConfig | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [lastSessionId, setLastSessionId] = useState<string>(() => {
+    try {
+      return localStorage.getItem('skyscp_last_session_id') || '';
+    } catch {
+      return '';
+    }
+  });
 
   // Local Pane State
   const [localPath, setLocalPath] = useState<string>('');
@@ -213,6 +220,12 @@ export function App() {
       await ipc.connectSftp(session, secret);
       setActiveSession(session);
       setIsConnected(true);
+      setLastSessionId(session.id);
+      try {
+        localStorage.setItem('skyscp_last_session_id', session.id);
+      } catch (e) {
+        console.error('Failed to store last session ID:', e);
+      }
 
       let targetRemote = session.initial_remote_path?.trim();
       if (!targetRemote || targetRemote === '~' || targetRemote === '.') {
@@ -490,6 +503,11 @@ export function App() {
       <SessionModal
         isOpen={isSessionModalOpen}
         sessions={sessions}
+        initialSessionId={
+          activeSession?.id ||
+          lastSessionId ||
+          (sessions.length > 0 ? sessions[sessions.length - 1].id : undefined)
+        }
         onClose={() => setIsSessionModalOpen(false)}
         onSaveSession={handleSaveSession}
         onDeleteSession={handleDeleteSession}
