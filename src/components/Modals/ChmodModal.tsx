@@ -100,17 +100,17 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-pop-in">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/30 backdrop-blur-xs p-4 animate-pop-in">
+      <div className="w-full max-w-sm bg-white border border-pink-100 rounded-xl shadow-2xl shadow-rose-950/10 overflow-hidden">
         {/* Header */}
-        <div className="h-11 border-b border-slate-800 px-4 flex items-center justify-between bg-slate-950/40">
-          <div className="flex items-center gap-2 font-semibold text-xs text-slate-100">
-            <Lock className="w-3.5 h-3.5 text-purple-400" />
+        <div className="h-11 border-b border-pink-100 px-4 flex items-center justify-between bg-rose-50/50">
+          <div className="flex items-center gap-2 font-semibold text-xs text-stone-800">
+            <Lock className="w-3.5 h-3.5 text-rose-500" />
             <span>Change Permissions (chmod)</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-rose-100/60 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -118,25 +118,25 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4 text-xs">
-          <div className="text-slate-400">
-            Target: <span className="font-semibold text-slate-200">{item.name}</span>
+          <div className="text-stone-500">
+            Target: <span className="font-semibold text-stone-800">{item.name}</span>
           </div>
 
           {/* 3x3 Checkbox Grid */}
-          <div className="grid grid-cols-4 gap-2 border border-slate-800 rounded-lg p-3 bg-slate-950/20 text-center">
-            <div className="text-slate-500 font-semibold text-[11px] text-left">Role</div>
-            <div className="text-slate-400 font-semibold text-[11px]">Read</div>
-            <div className="text-slate-400 font-semibold text-[11px]">Write</div>
-            <div className="text-slate-400 font-semibold text-[11px]">Execute</div>
+          <div className="grid grid-cols-4 gap-2 border border-pink-100 rounded-lg p-3 bg-rose-50/30 text-center">
+            <div className="text-stone-500 font-semibold text-[11px] text-left">Role</div>
+            <div className="text-stone-400 font-semibold text-[11px]">Read</div>
+            <div className="text-stone-400 font-semibold text-[11px]">Write</div>
+            <div className="text-stone-400 font-semibold text-[11px]">Execute</div>
 
             {/* Owner */}
-            <div className="text-slate-300 font-medium text-left">Owner</div>
+            <div className="text-stone-700 font-medium text-left">Owner</div>
             <div>
               <input
                 type="checkbox"
                 checked={ownerR}
                 onChange={(e) => setOwnerR(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -144,7 +144,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={ownerW}
                 onChange={(e) => setOwnerW(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -152,18 +152,18 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={ownerX}
                 onChange={(e) => setOwnerX(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
 
             {/* Group */}
-            <div className="text-slate-300 font-medium text-left">Group</div>
+            <div className="text-stone-700 font-medium text-left">Group</div>
             <div>
               <input
                 type="checkbox"
                 checked={groupR}
                 onChange={(e) => setGroupR(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={groupW}
                 onChange={(e) => setGroupW(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -179,18 +179,18 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={groupX}
                 onChange={(e) => setGroupX(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
 
             {/* Others */}
-            <div className="text-slate-300 font-medium text-left">Others</div>
+            <div className="text-stone-700 font-medium text-left">Others</div>
             <div>
               <input
                 type="checkbox"
                 checked={otherR}
                 onChange={(e) => setOtherR(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -198,7 +198,7 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={otherW}
                 onChange={(e) => setOtherW(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
             <div>
@@ -206,35 +206,35 @@ export const ChmodModal: React.FC<ChmodModalProps> = ({
                 type="checkbox"
                 checked={otherX}
                 onChange={(e) => setOtherX(e.target.checked)}
-                className="rounded bg-slate-800 border-slate-700 text-sky-500 focus:ring-0"
+                className="rounded border-pink-300 text-rose-500 focus:ring-0 accent-rose-500 cursor-pointer"
               />
             </div>
           </div>
 
           {/* Octal value display/input */}
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Octal permissions:</span>
+            <span className="text-stone-500">Octal permissions:</span>
             <input
               type="text"
               value={octalStr}
               onChange={(e) => handleOctalChange(e.target.value)}
-              className="w-24 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 text-center font-mono font-bold text-sky-400 text-sm focus:outline-none focus:border-sky-500"
+              className="w-24 bg-rose-50/40 border border-pink-200 rounded-lg px-2.5 py-1 text-center font-mono font-bold text-rose-600 text-sm focus:outline-none focus:border-rose-400 focus:bg-white"
             />
           </div>
 
           {/* Actions */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-pink-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-rose-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-lg font-semibold bg-sky-500 hover:bg-sky-400 text-white transition-all shadow-sm active:scale-95"
+              className="px-4 py-1.5 rounded-lg font-semibold bg-rose-400 hover:bg-rose-500 text-white transition-all shadow-sm shadow-rose-200 active:scale-95 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : 'Apply'}
             </button>

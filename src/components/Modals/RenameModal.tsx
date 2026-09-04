@@ -43,16 +43,16 @@ export const RenameModal: React.FC<RenameModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-pop-in">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden">
-        <div className="h-11 border-b border-slate-800 px-4 flex items-center justify-between bg-slate-950/40">
-          <div className="flex items-center gap-2 font-semibold text-xs text-slate-100">
-            <Edit3 className="w-3.5 h-3.5 text-sky-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/30 backdrop-blur-xs p-4 animate-pop-in">
+      <div className="w-full max-w-sm bg-white border border-pink-100 rounded-xl shadow-2xl shadow-rose-950/10 overflow-hidden">
+        <div className="h-11 border-b border-pink-100 px-4 flex items-center justify-between bg-rose-50/50">
+          <div className="flex items-center gap-2 font-semibold text-xs text-stone-800">
+            <Edit3 className="w-3.5 h-3.5 text-rose-500" />
             <span>Rename Item</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-rose-100/60 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -60,28 +60,28 @@ export const RenameModal: React.FC<RenameModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 text-xs">
           <div className="space-y-1">
-            <label className="text-slate-400 font-medium">New Name</label>
+            <label className="text-stone-600 font-medium">New Name</label>
             <input
               autoFocus
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
+              className="w-full bg-rose-50/30 border border-pink-200 rounded-lg px-3 py-1.5 text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white font-mono"
             />
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-pink-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-rose-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !newName.trim()}
-              className="px-4 py-1.5 rounded-lg font-semibold bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white transition-all shadow-sm active:scale-95"
+              className="px-4 py-1.5 rounded-lg font-semibold bg-rose-400 hover:bg-rose-500 disabled:opacity-50 text-white transition-all shadow-sm shadow-rose-200 active:scale-95 cursor-pointer"
             >
               {isSubmitting ? 'Renaming...' : 'Rename'}
             </button>

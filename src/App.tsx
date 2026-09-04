@@ -432,7 +432,7 @@ export function App() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#fff9fa] font-sans text-stone-800">
       {/* Top macOS Title Bar */}
       <TitleBar
         platform={platform}
@@ -492,19 +492,19 @@ export function App() {
             onChmodItem={(item) => setChmodTarget(item)}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-900/40 p-8 text-center select-none border-l border-slate-800">
-            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-4 shadow-lg shadow-sky-500/5">
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#fff5f7]/60 to-[#fff0f3]/40 p-8 text-center select-none border-l border-pink-100/80">
+            <div className="w-16 h-16 rounded-2xl bg-rose-100/70 border border-rose-200/60 flex items-center justify-center text-rose-500 mb-4 shadow-lg shadow-rose-200/50">
               <Server className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-semibold text-slate-200 mb-1">
+            <h3 className="text-base font-semibold text-stone-800 mb-1">
               No Remote Host Connected
             </h3>
-            <p className="text-xs text-slate-400 max-w-sm mb-5 leading-relaxed">
+            <p className="text-xs text-stone-500 max-w-sm mb-5 leading-relaxed">
               Connect to an SFTP/SSH server to browse remote directories, transfer files, and edit code seamlessly.
             </p>
             <button
               onClick={() => setIsSessionModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-md shadow-sky-500/25 transition-all active:scale-95"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-rose-400 hover:bg-rose-500 text-white shadow-md shadow-rose-200/80 transition-all active:scale-95 cursor-pointer"
             >
               <Zap className="w-3.5 h-3.5 fill-white" />
               <span>Open Sessions & Connect</span>

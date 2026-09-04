@@ -364,22 +364,22 @@ export const FilePane: React.FC<FilePaneProps> = ({
       onDragOver={handlePaneDragOver}
       onDragLeave={handlePaneDragLeave}
       onDrop={(e) => handlePaneDrop(e)}
-      className="flex-1 flex flex-col h-full bg-slate-900/60 border-r border-slate-700/60 last:border-r-0 select-none overflow-hidden relative focus:outline-none"
+      className="flex-1 flex flex-col h-full bg-white/70 border-r border-pink-100 last:border-r-0 select-none overflow-hidden relative focus:outline-none"
     >
       {/* Visual Drag & Drop Overlay */}
       {isDragOver && (
-        <div className="absolute inset-0 z-40 bg-sky-950/80 backdrop-blur-xs border-2 border-dashed border-sky-400 flex flex-col items-center justify-center pointer-events-none animate-pop-in">
-          <div className="p-4 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex flex-col items-center gap-2 shadow-2xl pointer-events-none">
+        <div className="absolute inset-0 z-40 bg-rose-50/90 backdrop-blur-xs border-2 border-dashed border-rose-400 flex flex-col items-center justify-center pointer-events-none animate-pop-in">
+          <div className="p-5 rounded-2xl bg-white/95 border border-rose-300 flex flex-col items-center gap-2 shadow-xl shadow-rose-200/50 pointer-events-none">
             {isRemote ? (
-              <Upload className="w-8 h-8 text-sky-400 animate-bounce pointer-events-none" />
+              <Upload className="w-8 h-8 text-rose-500 animate-bounce pointer-events-none" />
             ) : (
-              <Download className="w-8 h-8 text-sky-400 animate-bounce pointer-events-none" />
+              <Download className="w-8 h-8 text-rose-500 animate-bounce pointer-events-none" />
             )}
-            <span className="text-sm font-bold text-sky-100 pointer-events-none">
+            <span className="text-sm font-bold text-rose-900 pointer-events-none">
               Drop here to {isRemote ? 'Upload to Remote' : 'Download to Local'}
             </span>
             {dropTargetFolder && (
-              <span className="text-xs text-sky-300 font-mono bg-sky-900/60 px-2 py-0.5 rounded pointer-events-none">
+              <span className="text-xs text-rose-700 font-mono bg-rose-100 px-2 py-0.5 rounded pointer-events-none border border-rose-200">
                 Into: {dropTargetFolder}
               </span>
             )}
@@ -388,14 +388,14 @@ export const FilePane: React.FC<FilePaneProps> = ({
       )}
 
       {/* Pane Header */}
-      <div className="h-10 border-b border-slate-700/60 bg-slate-800/60 px-3 flex items-center justify-between gap-2">
+      <div className="h-10 border-b border-pink-100 bg-rose-50/40 px-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {isRemote ? (
-            <Server className="w-4 h-4 text-sky-400 shrink-0" />
+            <Server className="w-4 h-4 text-rose-500 shrink-0" />
           ) : (
-            <Laptop className="w-4 h-4 text-indigo-400 shrink-0" />
+            <Laptop className="w-4 h-4 text-rose-400 shrink-0" />
           )}
-          <span className="text-xs font-bold text-slate-200 truncate">{title}</span>
+          <span className="text-xs font-bold text-stone-800 truncate">{title}</span>
         </div>
 
         {/* Action icons */}
@@ -407,7 +407,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                   key={d.mount_point}
                   onClick={() => onNavigate(d.mount_point)}
                   title={d.name}
-                  className="px-1.5 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-[10px] font-mono text-slate-300"
+                  className="px-1.5 py-0.5 rounded bg-rose-100/80 hover:bg-rose-200 text-[10px] font-mono text-stone-700 cursor-pointer"
                 >
                   {d.name.includes(':') ? d.name.slice(0, 2) : d.name}
                 </button>
@@ -418,38 +418,38 @@ export const FilePane: React.FC<FilePaneProps> = ({
           <button
             onClick={() => (onGoHome ? onGoHome() : onNavigate('~'))}
             title="Home Directory (~)"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors"
+            className="p-1 rounded text-stone-500 hover:text-rose-600 hover:bg-rose-100/70 transition-colors cursor-pointer"
           >
             <Home className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleGoUp}
             title="Parent Directory (Up)"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors"
+            className="p-1 rounded text-stone-500 hover:text-rose-600 hover:bg-rose-100/70 transition-colors cursor-pointer"
           >
             <FolderUp className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onRefresh}
             title="Refresh"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors"
+            className="p-1 rounded text-stone-500 hover:text-rose-600 hover:bg-rose-100/70 transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-sky-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-rose-500' : ''}`} />
           </button>
           <button
             onClick={onNewFolder}
             title="New Folder (F7)"
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700/80 transition-colors"
+            className="p-1 rounded text-stone-500 hover:text-rose-600 hover:bg-rose-100/70 transition-colors cursor-pointer"
           >
             <FolderPlus className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onToggleHidden}
             title={showHidden ? 'Hide Hidden Files' : 'Show Hidden Files'}
-            className={`p-1 rounded transition-colors ${
+            className={`p-1 rounded transition-colors cursor-pointer ${
               showHidden
-                ? 'text-sky-400 bg-sky-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-700/80'
+                ? 'text-rose-600 bg-rose-100/90 border border-rose-200'
+                : 'text-stone-500 hover:text-rose-600 hover:bg-rose-100/70'
             }`}
           >
             {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -458,7 +458,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
       </div>
 
       {/* Path Breadcrumb & Search Bar */}
-      <div className="border-b border-slate-800 bg-slate-900/40 px-3 py-1.5 flex items-center gap-2">
+      <div className="border-b border-pink-100 bg-white/90 px-3 py-1.5 flex items-center gap-2">
         <div className="flex-1 min-w-0">
           {isEditingPath ? (
             <form onSubmit={handlePathSubmit} className="flex items-center">
@@ -468,14 +468,14 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 value={inputPath}
                 onChange={(e) => setInputPath(e.target.value)}
                 onBlur={() => setIsEditingPath(false)}
-                className="w-full bg-slate-950 border border-sky-500/60 rounded px-2 py-0.5 text-xs text-slate-100 font-mono focus:outline-none"
+                className="w-full bg-rose-50/30 border border-rose-300 rounded px-2 py-0.5 text-xs text-stone-800 font-mono focus:outline-none focus:ring-1 focus:ring-rose-400"
               />
             </form>
           ) : (
             <div
               onClick={() => setIsEditingPath(true)}
               title="Click to edit path directly"
-              className="flex items-center gap-1 text-xs font-mono text-slate-400 cursor-text hover:bg-slate-800/50 px-1 py-0.5 rounded overflow-x-auto whitespace-nowrap scrollbar-none"
+              className="flex items-center gap-1 text-xs font-mono text-stone-500 cursor-text hover:bg-rose-50/60 px-1 py-0.5 rounded overflow-x-auto whitespace-nowrap scrollbar-none"
             >
               <button
                 type="button"
@@ -483,20 +483,20 @@ export const FilePane: React.FC<FilePaneProps> = ({
                   e.stopPropagation();
                   onNavigate(currentPath.startsWith('/') ? '/' : 'C:\\');
                 }}
-                className="hover:text-sky-400 text-slate-400 shrink-0"
+                className="hover:text-rose-600 text-stone-500 shrink-0 font-bold"
               >
                 /
               </button>
               {pathSegments.map((seg) => (
                 <React.Fragment key={seg.fullPath}>
-                  <span className="text-slate-600">/</span>
+                  <span className="text-pink-300">/</span>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onNavigate(seg.fullPath);
                     }}
-                    className="hover:text-sky-300 text-slate-300 hover:underline shrink-0"
+                    className="hover:text-rose-600 text-stone-700 hover:underline shrink-0 font-medium"
                   >
                     {seg.name}
                   </button>
@@ -508,44 +508,44 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
         {/* Quick search input */}
         <div className="relative w-28 shrink-0">
-          <Search className="w-3 h-3 absolute left-2 top-2 text-slate-500" />
+          <Search className="w-3 h-3 absolute left-2 top-2 text-stone-400" />
           <input
             type="text"
             placeholder="Filter..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-800/80 border border-slate-700/60 rounded-md pl-6 pr-2 py-0.5 text-[11px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500/60"
+            className="w-full bg-rose-50/30 border border-pink-200/80 rounded-md pl-6 pr-2 py-0.5 text-[11px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-rose-400 focus:bg-white"
           />
         </div>
       </div>
 
       {/* Table Header */}
-      <div className="h-7 border-b border-slate-800 bg-slate-800/30 px-3 flex items-center text-[11px] font-semibold text-slate-400 select-none">
+      <div className="h-7 border-b border-pink-100 bg-rose-50/50 px-3 flex items-center text-[11px] font-semibold text-stone-600 select-none">
         <div
           onClick={() => handleSort('name')}
-          className="flex-1 flex items-center gap-1 cursor-pointer hover:text-slate-200"
+          className="flex-1 flex items-center gap-1 cursor-pointer hover:text-stone-900"
         >
           <span>Name</span>
           {sortField === 'name' && (
-            <ArrowUpDown className="w-2.5 h-2.5 text-sky-400 shrink-0" />
+            <ArrowUpDown className="w-2.5 h-2.5 text-rose-500 shrink-0" />
           )}
         </div>
         <div
           onClick={() => handleSort('size')}
-          className="w-24 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-slate-200"
+          className="w-24 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-stone-900"
         >
           <span>Size</span>
           {sortField === 'size' && (
-            <ArrowUpDown className="w-2.5 h-2.5 text-sky-400 shrink-0" />
+            <ArrowUpDown className="w-2.5 h-2.5 text-rose-500 shrink-0" />
           )}
         </div>
         <div
           onClick={() => handleSort('modified_at')}
-          className="w-32 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-slate-200 hidden sm:flex"
+          className="w-32 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-stone-900 hidden sm:flex"
         >
           <span>Modified</span>
           {sortField === 'modified_at' && (
-            <ArrowUpDown className="w-2.5 h-2.5 text-sky-400 shrink-0" />
+            <ArrowUpDown className="w-2.5 h-2.5 text-rose-500 shrink-0" />
           )}
         </div>
         {isRemote && (
@@ -556,12 +556,12 @@ export const FilePane: React.FC<FilePaneProps> = ({
       </div>
 
       {/* File List Items */}
-      <div className="flex-1 overflow-y-auto divide-y divide-slate-800/40 focus:outline-none">
+      <div className="flex-1 overflow-y-auto divide-y divide-pink-50/60 focus:outline-none">
         {displayItems.length === 0 ? (
-          <div className="h-40 flex flex-col items-center justify-center text-xs text-slate-500">
+          <div className="h-40 flex flex-col items-center justify-center text-xs text-stone-400">
             {isLoading ? (
               <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
+                <RefreshCw className="w-4 h-4 animate-spin text-rose-500" />
                 <span>Loading directory...</span>
               </div>
             ) : (
@@ -603,10 +603,10 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 onContextMenu={(e) => handleContextMenu(e, item)}
                 className={`flex items-center px-3 py-1.5 text-xs transition-colors cursor-default ${
                   isRowDropTarget
-                    ? 'bg-sky-500/30 border border-sky-400'
+                    ? 'bg-rose-100 border border-rose-400 text-rose-950 font-medium'
                     : isSelected
-                    ? 'bg-sky-500/25 text-white font-medium'
-                    : 'text-slate-300 hover:bg-slate-800/50'
+                    ? 'bg-rose-100/80 text-rose-950 font-medium'
+                    : 'text-stone-700 hover:bg-rose-50/60'
                 }`}
               >
                 {/* File Icon & Name */}
@@ -616,7 +616,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 </div>
 
                 {/* Size */}
-                <div className="w-24 text-right font-mono text-[11px] text-slate-400 shrink-0">
+                <div className="w-24 text-right font-mono text-[11px] text-stone-500 shrink-0">
                   {item.is_dir
                     ? item.is_symlink
                       ? '<LINK DIR>'
@@ -625,7 +625,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 </div>
 
                 {/* Modified Date */}
-                <div className="w-32 text-right font-mono text-[11px] text-slate-500 shrink-0 hidden sm:block">
+                <div className="w-32 text-right font-mono text-[11px] text-stone-400 shrink-0 hidden sm:block">
                   {formatTimestamp(item.modified_at)}
                 </div>
 
@@ -633,7 +633,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 {isRemote && (
                   <div
                     title={`Octal: ${item.permissions}`}
-                    className="w-16 text-right font-mono text-[10px] text-slate-400 shrink-0 hidden md:block"
+                    className="w-16 text-right font-mono text-[10px] text-stone-400 shrink-0 hidden md:block"
                   >
                     {octalToSymbolic(item.permissions)}
                   </div>
@@ -645,18 +645,18 @@ export const FilePane: React.FC<FilePaneProps> = ({
       </div>
 
       {/* Pane Footer Info */}
-      <div className="h-6 border-t border-slate-800/80 bg-slate-900/80 px-3 flex items-center justify-between text-[11px] text-slate-400">
+      <div className="h-6 border-t border-pink-100 bg-rose-50/50 px-3 flex items-center justify-between text-[11px] text-stone-500">
         <div className="truncate">
           <span>{displayItems.length} items</span>
           {selectedItems.length > 0 && (
-            <span className="ml-2 text-sky-300 font-medium">
+            <span className="ml-2 text-rose-600 font-medium">
               {selectedItems.length === 1
                 ? `Selected: ${selectedItems[0].name} (${selectedItems[0].is_dir ? 'DIR' : formatFileSize(selectedItems[0].size)})`
                 : `Selected: ${selectedItems.length} items (${formatFileSize(totalSelectedSize)})`}
             </span>
           )}
         </div>
-        <div className="text-[10px] text-slate-500 shrink-0 ml-2">
+        <div className="text-[10px] text-stone-400 shrink-0 ml-2">
           {isRemote ? 'Remote (SFTP)' : 'Local FS'}
         </div>
       </div>

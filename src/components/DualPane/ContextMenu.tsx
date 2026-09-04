@@ -72,7 +72,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${posX}px`, top: `${posY}px` }}
-      className="fixed z-50 w-52 py-1.5 bg-slate-800/95 backdrop-blur-md border border-slate-700/80 rounded-lg shadow-xl text-xs text-slate-200 animate-pop-in select-none"
+      className="fixed z-50 w-52 py-1.5 bg-white/95 backdrop-blur-md border border-pink-100 rounded-xl shadow-xl shadow-rose-950/10 text-xs text-stone-700 animate-pop-in select-none"
     >
       {selectedCount > 1 ? (
         <>
@@ -81,13 +81,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               onTransfer();
               onClose();
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left font-medium text-sky-300"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-700 transition-colors text-left font-medium text-rose-600 cursor-pointer"
           >
             <div className="flex items-center gap-2">
               {isRemote ? (
-                <Download className="w-3.5 h-3.5 text-sky-400" />
+                <Download className="w-3.5 h-3.5 text-rose-500" />
               ) : (
-                <Upload className="w-3.5 h-3.5 text-sky-400" />
+                <Upload className="w-3.5 h-3.5 text-rose-500" />
               )}
               <span>
                 {isRemote
@@ -95,23 +95,23 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                   : `Upload (${selectedCount} items)`}
               </span>
             </div>
-            <span className="text-[10px] text-slate-400">F5</span>
+            <span className="text-[10px] text-stone-400 font-mono">F5</span>
           </button>
 
-          <div className="h-[1px] bg-slate-700/60 my-1" />
+          <div className="h-[1px] bg-pink-100 my-1" />
 
           <button
             onClick={() => {
               onDelete();
               onClose();
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-100/70 text-rose-600 transition-colors text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
               <span>Delete ({selectedCount} items)</span>
             </div>
-            <span className="text-[10px] text-rose-400/80">F8</span>
+            <span className="text-[10px] text-rose-400">F8</span>
           </button>
         </>
       ) : item ? (
@@ -122,13 +122,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 onOpen();
                 onClose();
               }}
-              className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+              className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <FolderOpen className="w-3.5 h-3.5 text-sky-400" />
+                <FolderOpen className="w-3.5 h-3.5 text-rose-400" />
                 <span>Open Folder</span>
               </div>
-              <span className="text-[10px] text-slate-400">Enter</span>
+              <span className="text-[10px] text-stone-400 font-mono">Enter</span>
             </button>
           ) : (
             <>
@@ -137,17 +137,17 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                   onTransfer();
                   onClose();
                 }}
-                className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left font-medium text-sky-300"
+                className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-700 transition-colors text-left font-medium text-rose-600 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   {isRemote ? (
-                    <Download className="w-3.5 h-3.5 text-sky-400" />
+                    <Download className="w-3.5 h-3.5 text-rose-500" />
                   ) : (
-                    <Upload className="w-3.5 h-3.5 text-sky-400" />
+                    <Upload className="w-3.5 h-3.5 text-rose-500" />
                   )}
                   <span>{isRemote ? 'Download to Local' : 'Upload to Remote'}</span>
                 </div>
-                <span className="text-[10px] text-slate-400">F5</span>
+                <span className="text-[10px] text-stone-400 font-mono">F5</span>
               </button>
 
               {isRemote && (
@@ -156,19 +156,19 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     onEdit();
                     onClose();
                   }}
-                  className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+                  className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                    <Edit3 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Edit (Auto-Sync)</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">F4</span>
+                  <span className="text-[10px] text-stone-400 font-mono">F4</span>
                 </button>
               )}
             </>
           )}
 
-          <div className="h-[1px] bg-slate-700/60 my-1" />
+          <div className="h-[1px] bg-pink-100 my-1" />
         </>
       ) : null}
 
@@ -177,13 +177,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           onNewFolder();
           onClose();
         }}
-        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+        className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
       >
         <div className="flex items-center gap-2">
-          <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
+          <FolderPlus className="w-3.5 h-3.5 text-amber-500" />
           <span>New Folder</span>
         </div>
-        <span className="text-[10px] text-slate-400">F7</span>
+        <span className="text-[10px] text-stone-400 font-mono">F7</span>
       </button>
 
       {item && selectedCount <= 1 && (
@@ -193,13 +193,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               onRename();
               onClose();
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+              <Edit3 className="w-3.5 h-3.5 text-stone-400" />
               <span>Rename</span>
             </div>
-            <span className="text-[10px] text-slate-400">F2</span>
+            <span className="text-[10px] text-stone-400 font-mono">F2</span>
           </button>
 
           {isRemote && (
@@ -208,10 +208,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 onChmod();
                 onClose();
               }}
-              className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+              className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-purple-400" />
+                <Lock className="w-3.5 h-3.5 text-purple-500" />
                 <span>Permissions (chmod)</span>
               </div>
             </button>
@@ -222,28 +222,28 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               onCopyPath();
               onClose();
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition-colors text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <Copy className="w-3.5 h-3.5 text-slate-400" />
+              <Copy className="w-3.5 h-3.5 text-stone-400" />
               <span>Copy Path</span>
             </div>
           </button>
 
-          <div className="h-[1px] bg-slate-700/60 my-1" />
+          <div className="h-[1px] bg-pink-100 my-1" />
 
           <button
             onClick={() => {
               onDelete();
               onClose();
             }}
-            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-colors text-left"
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-100/70 text-rose-600 transition-colors text-left cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
               <span>Delete</span>
             </div>
-            <span className="text-[10px] text-rose-400/80">F8</span>
+            <span className="text-[10px] text-rose-400 font-mono">F8</span>
           </button>
         </>
       )}

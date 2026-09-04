@@ -37,21 +37,21 @@ const ToastItem: React.FC<{ toast: ToastMessage; onDismiss: (id: string) => void
     <div
       className={`pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg shadow-lg border backdrop-blur-md text-xs font-medium animate-pop-in select-none ${
         toast.type === 'success'
-          ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+          ? 'bg-white/95 border-emerald-200 text-stone-800 shadow-stone-900/5'
           : toast.type === 'error'
-          ? 'bg-rose-950/90 border-rose-500/40 text-rose-200'
-          : 'bg-slate-800/95 border-slate-700 text-slate-200'
+          ? 'bg-white/95 border-rose-200 text-stone-800 shadow-rose-950/5'
+          : 'bg-white/95 border-pink-200 text-stone-800 shadow-rose-950/5'
       }`}
     >
-      {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-      {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
-      {toast.type === 'info' && <Info className="w-4 h-4 text-sky-400 shrink-0" />}
+      {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+      {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+      {toast.type === 'info' && <Info className="w-4 h-4 text-rose-400 shrink-0" />}
 
       <span className="max-w-xs">{toast.message}</span>
 
       <button
         onClick={() => onDismiss(toast.id)}
-        className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors ml-1"
+        className="p-0.5 rounded hover:bg-rose-100 text-stone-400 hover:text-stone-700 transition-colors ml-1 cursor-pointer"
       >
         <X className="w-3.5 h-3.5" />
       </button>

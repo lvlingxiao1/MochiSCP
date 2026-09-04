@@ -186,17 +186,17 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-pop-in">
-      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl overflow-hidden flex flex-col h-[520px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/30 backdrop-blur-xs p-4 animate-pop-in">
+      <div className="w-full max-w-3xl bg-white border border-pink-100 rounded-2xl shadow-2xl shadow-rose-950/10 overflow-hidden flex flex-col h-[520px]">
         {/* Header */}
-        <div className="h-12 border-b border-slate-800 px-4 flex items-center justify-between bg-slate-950/40">
-          <div className="flex items-center gap-2 font-semibold text-sm text-slate-100">
-            <Server className="w-4 h-4 text-sky-400" />
+        <div className="h-12 border-b border-pink-100 px-4 flex items-center justify-between bg-rose-50/50">
+          <div className="flex items-center gap-2 font-semibold text-sm text-stone-800">
+            <Server className="w-4 h-4 text-rose-500" />
             <span>Session Manager</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded text-stone-400 hover:text-stone-700 hover:bg-rose-100/60 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -205,13 +205,13 @@ export const SessionModal: React.FC<SessionModalProps> = ({
         {/* Content Body: Left sidebar (sessions list) + Right form */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left: Saved Sessions */}
-          <div className="w-64 border-r border-slate-800 bg-slate-950/20 flex flex-col p-3 gap-2">
+          <div className="w-64 border-r border-pink-100 bg-[#fffbfc] flex flex-col p-3 gap-2">
             <button
               onClick={() => setSelectedId('new')}
-              className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all ${
+              className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                 selectedId === 'new'
-                  ? 'bg-sky-500/20 border-sky-500/40 text-sky-300'
-                  : 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                  ? 'bg-rose-100 border-rose-300 text-rose-800 shadow-xs'
+                  : 'border-pink-200/80 hover:bg-rose-50 text-stone-700'
               }`}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -230,18 +230,18 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   title="Click to select, double-click to connect"
                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs cursor-pointer group transition-colors ${
                     selectedId === s.id
-                      ? 'bg-slate-800 text-white border border-slate-700 font-medium'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                      ? 'bg-rose-100/90 text-rose-950 border border-rose-200 font-medium shadow-xs'
+                      : 'text-stone-600 hover:bg-rose-50/70 hover:text-stone-900'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: s.color || '#38bdf8' }}
+                      style={{ backgroundColor: s.color || '#fb7185' }}
                     />
                     <div className="truncate">
-                      <div className="truncate text-slate-200">{s.name}</div>
-                      <div className="text-[10px] text-slate-500 truncate">
+                      <div className="truncate text-stone-800">{s.name}</div>
+                      <div className="text-[10px] text-stone-400 truncate">
                         {s.username}@{s.host}
                       </div>
                     </div>
@@ -253,7 +253,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                       onDeleteSession(s.id);
                     }}
                     title="Delete session"
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-400 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-600 transition-opacity cursor-pointer"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -264,7 +264,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
           {/* Right: Form */}
           <div
-            className="flex-1 p-5 overflow-y-auto space-y-4"
+            className="flex-1 p-5 overflow-y-auto space-y-4 bg-white"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !isConnecting && !isSaving) {
                 e.preventDefault();
@@ -273,34 +273,34 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             }}
           >
             {errorMsg && (
-              <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1">
-                <label className="text-xs text-slate-400 font-medium">Session Name</label>
+                <label className="text-xs text-stone-600 font-medium">Session Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. AWS Production"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+                  className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-400 font-medium">Color</label>
+                <label className="text-xs text-stone-600 font-medium">Color</label>
                 <div className="flex items-center gap-1.5 pt-1">
-                  {['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'].map((c) => (
+                  {['#fb7185', '#f43f5e', '#ec4899', '#f97316', '#10b981', '#8b5cf6'].map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setColor(c)}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                        color === c ? 'scale-110 border-white' : 'border-transparent'
+                      className={`w-6 h-6 rounded-full border-2 transition-transform cursor-pointer ${
+                        color === c ? 'scale-110 border-stone-800' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                     />
@@ -311,49 +311,49 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
             <div className="grid grid-cols-4 gap-3">
               <div className="col-span-3 space-y-1">
-                <label className="text-xs text-slate-400 font-medium">Host / IP</label>
+                <label className="text-xs text-stone-600 font-medium">Host / IP</label>
                 <input
                   type="text"
                   value={host}
                   onChange={(e) => setHost(e.target.value)}
                   placeholder="192.168.1.100 or myserver.com"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
+                  className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-slate-400 font-medium">Port</label>
+                <label className="text-xs text-stone-600 font-medium">Port</label>
                 <input
                   type="number"
                   value={port}
                   onChange={(e) => setPort(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
+                  className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-slate-400 font-medium">Username</label>
+              <label className="text-xs text-stone-600 font-medium">Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="ubuntu / root / ec2-user"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
+                className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
               />
             </div>
 
             {/* Authentication Tabs */}
             <div className="space-y-2 pt-1">
-              <label className="text-xs text-slate-400 font-medium">Authentication Method</label>
+              <label className="text-xs text-stone-600 font-medium">Authentication Method</label>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setAuthType('password')}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     authType === 'password'
-                      ? 'bg-sky-500/20 border-sky-500 text-sky-300'
-                      : 'border-slate-700 text-slate-400 hover:bg-slate-800'
+                      ? 'bg-rose-100/90 border-rose-300 text-rose-800 font-semibold'
+                      : 'border-pink-100 text-stone-500 hover:bg-rose-50/60'
                   }`}
                 >
                   <Lock className="w-3.5 h-3.5" />
@@ -362,10 +362,10 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setAuthType('private_key')}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium border flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     authType === 'private_key'
-                      ? 'bg-sky-500/20 border-sky-500 text-sky-300'
-                      : 'border-slate-700 text-slate-400 hover:bg-slate-800'
+                      ? 'bg-rose-100/90 border-rose-300 text-rose-800 font-semibold'
+                      : 'border-pink-100 text-stone-500 hover:bg-rose-50/60'
                   }`}
                 >
                   <Key className="w-3.5 h-3.5" />
@@ -375,35 +375,35 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
               {authType === 'password' ? (
                 <div className="space-y-1 pt-1">
-                  <label className="text-xs text-slate-400 font-medium">Password (Stored in Keychain)</label>
+                  <label className="text-xs text-stone-600 font-medium">Password (Stored in Apple Keychain)</label>
                   <input
                     type="password"
                     value={secret}
                     onChange={(e) => setSecret(e.target.value)}
                     placeholder="Enter password..."
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+                    className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                   />
                 </div>
               ) : (
                 <div className="space-y-2 pt-1">
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-400 font-medium">Private Key File Path</label>
+                    <label className="text-xs text-stone-600 font-medium">Private Key File Path</label>
                     <input
                       type="text"
                       value={keyPath}
                       onChange={(e) => setKeyPath(e.target.value)}
                       placeholder="/Users/username/.ssh/id_rsa or id_ed25519"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
+                      className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-400 font-medium">Key Passphrase (Optional)</label>
+                    <label className="text-xs text-stone-600 font-medium">Key Passphrase (Optional)</label>
                     <input
                       type="password"
                       value={secret}
                       onChange={(e) => setSecret(e.target.value)}
                       placeholder="Passphrase if encrypted..."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
+                      className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                     />
                   </div>
                 </div>
@@ -411,25 +411,25 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             </div>
 
             <div className="space-y-1 pt-1">
-              <label className="text-xs text-slate-400 font-medium">
-                Initial Remote Directory <span className="text-slate-500 font-normal">(Default: User Home ~)</span>
+              <label className="text-xs text-stone-600 font-medium">
+                Initial Remote Directory <span className="text-stone-400 font-normal">(Default: User Home ~)</span>
               </label>
               <input
                 type="text"
                 value={initialPath}
                 onChange={(e) => setInitialPath(e.target.value)}
                 placeholder="Leave empty for User Home (~), or e.g. /var/www"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-sky-500"
+                className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
               />
             </div>
           </div>
         </div>
 
         {/* Footer Buttons */}
-        <div className="h-14 border-t border-slate-800 bg-slate-950/40 px-5 flex items-center justify-between">
+        <div className="h-14 border-t border-pink-100 bg-rose-50/40 px-5 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-800 hover:bg-rose-100/50 transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -438,7 +438,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-white hover:bg-rose-50 text-stone-700 border border-pink-200 transition-colors cursor-pointer shadow-xs"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSaving ? 'Saving...' : 'Save'}</span>
@@ -447,7 +447,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             <button
               onClick={handleConnectClick}
               disabled={isConnecting}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-white shadow-md shadow-sky-500/20 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-lg text-xs font-semibold bg-rose-400 hover:bg-rose-500 text-white shadow-md shadow-rose-200 transition-all active:scale-95 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-white" />
               <span>{isConnecting ? 'Connecting...' : 'Connect'}</span>
