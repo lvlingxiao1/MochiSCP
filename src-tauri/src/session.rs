@@ -3,13 +3,23 @@ use keyring::Entry;
 use std::fs;
 use std::path::PathBuf;
 
-const KEYRING_SERVICE: &str = "com.skyscp.app";
+const KEYRING_SERVICE: &str = "com.mochiscp.desktop";
+const LEGACY_KEYRING_SERVICE: &str = "com.skyscp.app";
 
 fn get_config_file_path() -> Result<PathBuf, String> {
     let mut config_dir = dirs::config_dir().ok_or_else(|| "Failed to get config directory".to_string())?;
-    config_dir.push("skyscp");
+    config_dir.push("mochiscp");
     if !config_dir.exists() {
-        fs::create_dir_all(&config_dir).map_err(|e| format!("Failed to create config dir: {}", e))?;
+        // Migrate from legacy skyscp config if present
+        let mut legacy_dir = dirs::config_dir().unwrap_or_default();
+        legacy_dir.push("skyscp");
+        let legacy_file = legacy_dir.join("sessions.json");
+        if legacy_file.exists() {
+            let _ = fs::create_dir_all(&config_dir);
+            let _ = fs::copy(&legacy_file, config_dir.join("sessions.json"));
+        } else {
+            fs::create_dir_all(&config_dir).map_err(|e| format!("Failed to create config dir: {}", e))?;
+        }
     }
     config_dir.push("sessions.json");
     Ok(config_dir)
@@ -65,17 +75,24 @@ pub fn delete_session(session_id: &str) -> Result<(), String> {
     if let Ok(entry) = Entry::new(KEYRING_SERVICE, session_id) {
         let _ = entry.delete_credential();
     }
+    if let Ok(legacy_entry) = Entry::new(LEGACY_KEYRING_SERVICE, session_id) {
+        let _ = legacy_entry.delete_credential();
+    }
 
     Ok(())
 }
 
 pub fn get_session_secret(session_id: &str) -> Result<Option<String>, String> {
     if let Ok(entry) = Entry::new(KEYRING_SERVICE, session_id) {
-        match entry.get_password() {
-            Ok(pwd) => Ok(Some(pwd)),
-            Err(_) => Ok(None),
+        if let Ok(pwd) = entry.get_password() {
+            return Ok(Some(pwd));
         }
-    } else {
-        Ok(None)
     }
+    // Fallback to legacy keyring service
+    if let Ok(legacy_entry) = Entry::new(LEGACY_KEYRING_SERVICE, session_id) {
+        if let Ok(pwd) = legacy_entry.get_password() {
+            return Ok(Some(pwd));
+        }
+    }
+    Ok(None)
 }

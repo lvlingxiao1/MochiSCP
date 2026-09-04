@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn test_symlink_detection() {
         use std::os::unix::fs::symlink;
-        let test_dir = std::env::temp_dir().join(format!("test_skyscp_{}", uuid::Uuid::new_v4()));
+        let test_dir = std::env::temp_dir().join(format!("test_mochiscp_{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&test_dir).unwrap();
 
         let real_sub_dir = test_dir.join("real_folder");

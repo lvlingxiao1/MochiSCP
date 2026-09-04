@@ -30,7 +30,11 @@ export function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [lastSessionId, setLastSessionId] = useState<string>(() => {
     try {
-      return localStorage.getItem('skyscp_last_session_id') || '';
+      return (
+        localStorage.getItem('mochiscp_last_session_id') ||
+        localStorage.getItem('skyscp_last_session_id') ||
+        ''
+      );
     } catch {
       return '';
     }
@@ -222,7 +226,7 @@ export function App() {
       setIsConnected(true);
       setLastSessionId(session.id);
       try {
-        localStorage.setItem('skyscp_last_session_id', session.id);
+        localStorage.setItem('mochiscp_last_session_id', session.id);
       } catch (e) {
         console.error('Failed to store last session ID:', e);
       }
@@ -250,7 +254,7 @@ export function App() {
     isRemoteSource: boolean,
     targetDir?: string
   ) => {
-    console.log('[SkySCP] handleTransferItems triggered:', {
+    console.log('[MochiSCP] handleTransferItems triggered:', {
       count: items.length,
       isRemoteSource,
       targetDir,

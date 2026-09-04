@@ -17,7 +17,7 @@ pub fn edit_remote_file(
 ) -> Result<String, String> {
     // 1. Prepare local temp directory
     let mut temp_dir = dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
-    temp_dir.push("skyscp");
+    temp_dir.push("mochiscp");
     temp_dir.push("temp_edits");
     temp_dir.push(&session_id);
 

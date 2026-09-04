@@ -47,7 +47,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
       <div className="flex items-center gap-2.5">
         <div className="flex items-center gap-1.5 font-bold tracking-tight text-rose-600 text-sm">
           <FolderSync className="w-4 h-4 text-rose-500" />
-          <span>SkySCP</span>
+          <span>MochiSCP</span>
         </div>
 
         <div className="h-4 w-[1px] bg-pink-200/80 mx-1" />
