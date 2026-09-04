@@ -424,10 +424,10 @@ export function App() {
     }
   };
 
-  // Global DevTools shortcut (F12 or Cmd+Opt+I)
+  // Global DevTools shortcut (Cmd+Opt+I)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F12' || (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'I'))) {
+      if (e.metaKey && e.altKey && (e.key === 'i' || e.key === 'I')) {
         ipc.openDevtools();
       }
     };

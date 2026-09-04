@@ -95,7 +95,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                   : `Upload (${selectedCount} items)`}
               </span>
             </div>
-            <span className="text-[10px] text-stone-400 font-mono">F5</span>
           </button>
 
           <div className="h-[1px] bg-pink-100 my-1" />
@@ -111,7 +110,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               <Trash2 className="w-3.5 h-3.5 text-rose-500" />
               <span>Delete ({selectedCount} items)</span>
             </div>
-            <span className="text-[10px] text-rose-400">F8</span>
+            <span className="text-[10px] text-rose-400 font-mono">⌘⌫</span>
           </button>
         </>
       ) : item ? (
@@ -147,7 +146,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                   )}
                   <span>{isRemote ? 'Download to Local' : 'Upload to Remote'}</span>
                 </div>
-                <span className="text-[10px] text-stone-400 font-mono">F5</span>
               </button>
 
               {isRemote && (
@@ -162,7 +160,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     <Edit3 className="w-3.5 h-3.5 text-emerald-500" />
                     <span>Edit (Auto-Sync)</span>
                   </div>
-                  <span className="text-[10px] text-stone-400 font-mono">F4</span>
                 </button>
               )}
             </>
@@ -183,7 +180,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           <FolderPlus className="w-3.5 h-3.5 text-amber-500" />
           <span>New Folder</span>
         </div>
-        <span className="text-[10px] text-stone-400 font-mono">F7</span>
       </button>
 
       {item && selectedCount <= 1 && (
@@ -199,7 +195,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               <Edit3 className="w-3.5 h-3.5 text-stone-400" />
               <span>Rename</span>
             </div>
-            <span className="text-[10px] text-stone-400 font-mono">F2</span>
           </button>
 
           {isRemote && (
@@ -243,7 +238,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
               <Trash2 className="w-3.5 h-3.5 text-rose-500" />
               <span>Delete</span>
             </div>
-            <span className="text-[10px] text-rose-400 font-mono">F8</span>
+            <span className="text-[10px] text-rose-400 font-mono">⌘⌫</span>
           </button>
         </>
       )}

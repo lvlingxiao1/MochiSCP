@@ -225,15 +225,12 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
   const dragCounterRef = useRef(0);
 
-  // Keyboard Shortcuts (Select All Cmd+A, Transfer F5, Delete F8)
+  // Keyboard Shortcuts (Select All Cmd+A, Delete Cmd+Backspace, Open Enter)
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
       e.preventDefault();
       setSelectedItems(displayItems);
-    } else if (e.key === 'F5' && selectedItems.length > 0) {
-      e.preventDefault();
-      onTransferItems(selectedItems, isRemote);
-    } else if ((e.key === 'F8' || (e.metaKey && e.key === 'Backspace')) && selectedItems.length > 0) {
+    } else if (e.metaKey && e.key === 'Backspace' && selectedItems.length > 0) {
       e.preventDefault();
       onDeleteItems(selectedItems);
     } else if (e.key === 'Enter' && selectedItems.length === 1) {
@@ -438,7 +435,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
           </button>
           <button
             onClick={onNewFolder}
-            title="New Folder (F7)"
+            title="New Folder"
             className="p-1 rounded text-stone-500 hover:text-rose-600 hover:bg-rose-100/70 transition-colors cursor-pointer"
           >
             <FolderPlus className="w-3.5 h-3.5" />
