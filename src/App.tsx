@@ -33,13 +33,13 @@ export function App() {
   const [localPath, setLocalPath] = useState<string>('');
   const [localItems, setLocalItems] = useState<FileItem[]>([]);
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-  const [localShowHidden, setLocalShowHidden] = useState(false);
+  const [localShowHidden, setLocalShowHidden] = useState(true);
 
   // Remote Pane State
   const [remotePath, setRemotePath] = useState<string>('~');
   const [remoteItems, setRemoteItems] = useState<FileItem[]>([]);
   const [isRemoteLoading, setIsRemoteLoading] = useState(false);
-  const [remoteShowHidden, setRemoteShowHidden] = useState(false);
+  const [remoteShowHidden, setRemoteShowHidden] = useState(true);
 
   // Transfers & Queue
   const [transfers, setTransfers] = useState<TransferTask[]>([]);

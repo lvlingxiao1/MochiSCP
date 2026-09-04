@@ -113,7 +113,16 @@ impl SftpPool {
         };
         let path = Path::new(&resolved_path);
 
-        let entries = sftp.readdir(path).map_err(|e| format!("Failed to read remote dir: {}", e))?;
+        let entries = match sftp.readdir(path) {
+            Ok(e) => e,
+            Err(e) => {
+                if let Ok(real) = sftp.realpath(path) {
+                    sftp.readdir(&real).map_err(|err| format!("Failed to read remote dir: {}", err))?
+                } else {
+                    return Err(format!("Failed to read remote dir: {}", e));
+                }
+            }
+        };
         let mut items = Vec::new();
 
         for (item_path, stat) in entries {
@@ -136,9 +145,21 @@ impl SftpPool {
                 format!("{}/{}", resolved_path.trim_end_matches('/'), file_name)
             };
 
-            let is_dir = stat.is_dir();
+            let mut is_dir = stat.is_dir();
             let is_symlink = stat.file_type().is_symlink();
-            let size = stat.size.unwrap_or(0);
+            let mut size = stat.size.unwrap_or(0);
+
+            // If it's a symlink, check whether the target is a directory using stat()
+            if is_symlink {
+                if let Ok(target_stat) = sftp.stat(Path::new(&full_path)) {
+                    if target_stat.is_dir() {
+                        is_dir = true;
+                    }
+                    if let Some(target_sz) = target_stat.size {
+                        size = target_sz;
+                    }
+                }
+            }
             let modified_at = stat.mtime.unwrap_or(0) as i64;
             let permissions = stat
                 .perm

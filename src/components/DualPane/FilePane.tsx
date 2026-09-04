@@ -384,13 +384,17 @@ export const FilePane: React.FC<FilePaneProps> = ({
               >
                 {/* File Icon & Name */}
                 <div className="flex-1 flex items-center gap-2 min-w-0 pr-2">
-                  <FileIcon name={item.name} isDir={item.is_dir} />
+                  <FileIcon name={item.name} isDir={item.is_dir} isSymlink={item.is_symlink} />
                   <span className="truncate">{item.name}</span>
                 </div>
 
                 {/* Size */}
                 <div className="w-20 text-right font-mono text-[11px] text-slate-400 shrink-0">
-                  {item.is_dir ? '<DIR>' : formatFileSize(item.size)}
+                  {item.is_dir
+                    ? item.is_symlink
+                      ? '<LINK DIR>'
+                      : '<DIR>'
+                    : formatFileSize(item.size)}
                 </div>
 
                 {/* Modified Date */}

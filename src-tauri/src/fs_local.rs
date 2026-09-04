@@ -88,10 +88,22 @@ pub fn read_local_dir(dir_path: &str, show_hidden: bool) -> Result<Vec<FileItem>
         }
 
         let file_path = entry.path().to_string_lossy().to_string();
-        let metadata = entry.metadata().ok();
+        let file_type = entry.file_type().ok();
+        let is_symlink = file_type.as_ref().map(|ft| ft.is_symlink()).unwrap_or(false);
 
-        let is_dir = metadata.as_ref().map(|m| m.is_dir()).unwrap_or(false);
-        let is_symlink = metadata.as_ref().map(|m| m.is_symlink()).unwrap_or(false);
+        // If it's a symlink, check whether the target is a directory so users can navigate into it
+        let is_dir = if is_symlink {
+            fs::metadata(entry.path()).map(|m| m.is_dir()).unwrap_or(false)
+        } else {
+            file_type.as_ref().map(|ft| ft.is_dir()).unwrap_or(false)
+        };
+
+        let metadata = if is_symlink {
+            fs::metadata(entry.path()).or_else(|_| entry.path().symlink_metadata()).ok()
+        } else {
+            entry.metadata().ok()
+        };
+
         let size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
 
         let modified_at = metadata
@@ -172,5 +184,27 @@ mod tests {
     fn test_read_dir() {
         let items = read_local_dir("/tmp", true).expect("Reading /tmp should succeed");
         assert!(items.iter().all(|i| !i.name.is_empty()));
+    }
+
+    #[test]
+    fn test_symlink_detection() {
+        use std::os::unix::fs::symlink;
+        let test_dir = std::env::temp_dir().join(format!("test_skyscp_{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&test_dir).unwrap();
+
+        let real_sub_dir = test_dir.join("real_folder");
+        fs::create_dir_all(&real_sub_dir).unwrap();
+
+        let sym_folder = test_dir.join("sym_folder");
+        let _ = symlink(&real_sub_dir, &sym_folder);
+
+        let items = read_local_dir(&test_dir.to_string_lossy(), true).unwrap();
+        let sym_item = items.iter().find(|i| i.name == "sym_folder");
+        assert!(sym_item.is_some(), "sym_folder should exist");
+        let sym_item = sym_item.unwrap();
+        assert!(sym_item.is_symlink, "Should be marked as symlink");
+        assert!(sym_item.is_dir, "Target is a dir, so is_dir should be true");
+
+        let _ = fs::remove_dir_all(&test_dir);
     }
 }
