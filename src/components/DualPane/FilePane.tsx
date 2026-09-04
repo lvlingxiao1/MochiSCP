@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DriveInfo, FileItem } from '../../types';
 import { formatFileSize, formatTimestamp, octalToSymbolic } from '../../utils/format';
+import { setDragSession, getDragSession, DragSessionData } from '../../utils/dragDrop';
 import { FileIcon } from './FileIcon';
 import { ContextMenu } from './ContextMenu';
 
@@ -33,7 +34,7 @@ interface FilePaneProps {
   onGoHome?: () => void;
   onRefresh: () => void;
   onToggleHidden: () => void;
-  onTransferItems: (items: FileItem[], targetDir?: string) => void;
+  onTransferItems: (items: FileItem[], isRemoteSource: boolean, targetDir?: string) => void;
   onEditItem?: (item: FileItem) => void;
   onNewFolder: () => void;
   onRenameItem: (item: FileItem) => void;
@@ -191,7 +192,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
     } else if (isRemote && onEditItem) {
       onEditItem(item);
     } else {
-      onTransferItems([item]);
+      onTransferItems([item], isRemote);
     }
   };
 
@@ -222,6 +223,8 @@ export const FilePane: React.FC<FilePaneProps> = ({
     }
   };
 
+  const dragCounterRef = useRef(0);
+
   // Keyboard Shortcuts (Select All Cmd+A, Transfer F5, Delete F8)
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
@@ -229,7 +232,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
       setSelectedItems(displayItems);
     } else if (e.key === 'F5' && selectedItems.length > 0) {
       e.preventDefault();
-      onTransferItems(selectedItems);
+      onTransferItems(selectedItems, isRemote);
     } else if ((e.key === 'F8' || (e.metaKey && e.key === 'Backspace')) && selectedItems.length > 0) {
       e.preventDefault();
       onDeleteItems(selectedItems);
@@ -241,52 +244,95 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
   // Drag & Drop Handlers
   const handleDragStart = (e: React.DragEvent, item: FileItem) => {
-    // If the dragged item is not part of selectedItems, select it
     let itemsToDrag = selectedItems;
     if (!selectedPaths.has(item.path)) {
       itemsToDrag = [item];
       setSelectedItems([item]);
     }
 
-    e.dataTransfer.effectAllowed = 'copy';
-    const payload = {
+    const payload: DragSessionData = {
       source: isRemote ? 'remote' : 'local',
       sourcePath: currentPath,
       items: itemsToDrag,
     };
-    e.dataTransfer.setData('application/json', JSON.stringify(payload));
+
+    setDragSession(payload);
+
+    e.dataTransfer.effectAllowed = 'copy';
+    const jsonStr = JSON.stringify(payload);
+    try {
+      e.dataTransfer.setData('text/plain', jsonStr);
+      e.dataTransfer.setData('text', jsonStr);
+      e.dataTransfer.setData('application/json', jsonStr);
+    } catch {}
+  };
+
+  const handleDragEnd = () => {
+    setDragSession(null);
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+    setDropTargetFolder(null);
+  };
+
+  const handlePaneDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    setIsDragOver(true);
   };
 
   const handlePaneDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
-    setIsDragOver(true);
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
   };
 
   const handlePaneDragLeave = (e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
       setIsDragOver(false);
       setDropTargetFolder(null);
     }
   };
 
-  const handlePaneDrop = (e: React.DragEvent) => {
+  const handlePaneDrop = (e: React.DragEvent, overrideTargetFolder?: string) => {
     e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
     setIsDragOver(false);
+    const destination = overrideTargetFolder || dropTargetFolder || currentPath;
     setDropTargetFolder(null);
 
-    try {
-      const dataStr = e.dataTransfer.getData('application/json');
-      if (!dataStr) return;
-      const data = JSON.parse(dataStr);
-
-      // Only transfer if dragged from the opposite pane
-      if (data.source !== (isRemote ? 'remote' : 'local')) {
-        const destination = dropTargetFolder || currentPath;
-        onTransferItems(data.items, destination);
+    let payload = getDragSession();
+    if (!payload) {
+      const raw =
+        e.dataTransfer.getData('text/plain') ||
+        e.dataTransfer.getData('text') ||
+        e.dataTransfer.getData('application/json');
+      if (raw) {
+        try {
+          payload = JSON.parse(raw);
+        } catch (err) {
+          console.error('Failed to parse dropped data:', err);
+        }
       }
-    } catch (err) {
-      console.error('Failed to parse dropped data:', err);
+    }
+
+    setDragSession(null);
+
+    if (!payload || !payload.items || payload.items.length === 0) {
+      return;
+    }
+
+    const isFromRemote = payload.source === 'remote';
+    if (isFromRemote !== isRemote) {
+      onTransferItems(payload.items, isFromRemote, destination);
     }
   };
 
@@ -301,25 +347,26 @@ export const FilePane: React.FC<FilePaneProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => handleContextMenu(e, null)}
+      onDragEnter={handlePaneDragEnter}
       onDragOver={handlePaneDragOver}
       onDragLeave={handlePaneDragLeave}
-      onDrop={handlePaneDrop}
+      onDrop={(e) => handlePaneDrop(e)}
       className="flex-1 flex flex-col h-full bg-slate-900/60 border-r border-slate-700/60 last:border-r-0 select-none overflow-hidden relative focus:outline-none"
     >
       {/* Visual Drag & Drop Overlay */}
       {isDragOver && (
         <div className="absolute inset-0 z-40 bg-sky-950/80 backdrop-blur-xs border-2 border-dashed border-sky-400 flex flex-col items-center justify-center pointer-events-none animate-pop-in">
-          <div className="p-4 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex flex-col items-center gap-2 shadow-2xl">
+          <div className="p-4 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex flex-col items-center gap-2 shadow-2xl pointer-events-none">
             {isRemote ? (
-              <Upload className="w-8 h-8 text-sky-400 animate-bounce" />
+              <Upload className="w-8 h-8 text-sky-400 animate-bounce pointer-events-none" />
             ) : (
-              <Download className="w-8 h-8 text-sky-400 animate-bounce" />
+              <Download className="w-8 h-8 text-sky-400 animate-bounce pointer-events-none" />
             )}
-            <span className="text-sm font-bold text-sky-100">
+            <span className="text-sm font-bold text-sky-100 pointer-events-none">
               Drop here to {isRemote ? 'Upload to Remote' : 'Download to Local'}
             </span>
             {dropTargetFolder && (
-              <span className="text-xs text-sky-300 font-mono bg-sky-900/60 px-2 py-0.5 rounded">
+              <span className="text-xs text-sky-300 font-mono bg-sky-900/60 px-2 py-0.5 rounded pointer-events-none">
                 Into: {dropTargetFolder}
               </span>
             )}
@@ -518,6 +565,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 key={item.path}
                 draggable
                 onDragStart={(e) => handleDragStart(e, item)}
+                onDragEnd={handleDragEnd}
                 onDragOver={(e) => {
                   if (item.is_dir) {
                     e.preventDefault();
@@ -528,6 +576,13 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 onDragLeave={() => {
                   if (dropTargetFolder === item.path) {
                     setDropTargetFolder(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (item.is_dir) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handlePaneDrop(e, item.path);
                   }
                 }}
                 onClick={(e) => handleItemClick(item, index, e)}
@@ -602,15 +657,26 @@ export const FilePane: React.FC<FilePaneProps> = ({
           selectedCount={selectedItems.length}
           isRemote={isRemote}
           onClose={() => setContextMenu(null)}
-          onTransfer={() => onTransferItems(selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : [])}
+          onTransfer={() =>
+            onTransferItems(
+              selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : [],
+              isRemote
+            )
+          }
           onEdit={() => contextMenu.item && onEditItem && onEditItem(contextMenu.item)}
           onOpen={() => contextMenu.item && onNavigate(contextMenu.item.path)}
           onNewFolder={onNewFolder}
           onRename={() => contextMenu.item && onRenameItem(contextMenu.item)}
           onChmod={() => contextMenu.item && onChmodItem && onChmodItem(contextMenu.item)}
-          onDelete={() => onDeleteItems(selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : [])}
+          onDelete={() =>
+            onDeleteItems(
+              selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : []
+            )
+          }
           onCopyPath={() => {
-            const paths = (selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : []).map((i) => i.path);
+            const paths = (
+              selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : []
+            ).map((i) => i.path);
             navigator.clipboard.writeText(paths.join('\n'));
           }}
         />

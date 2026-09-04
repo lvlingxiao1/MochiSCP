@@ -268,7 +268,10 @@ export function App() {
     for (const item of items) {
       const taskId = crypto.randomUUID();
       const separator = isUpload ? '/' : platform?.sep || '/';
-      const dest = `${destFolder.endsWith(separator) ? destFolder : destFolder + separator}${item.name}`;
+      const cleanFolder = destFolder.endsWith(separator) && destFolder.length > 1
+        ? destFolder.slice(0, -1)
+        : destFolder;
+      const dest = cleanFolder === '/' ? `/${item.name}` : `${cleanFolder}${separator}${item.name}`;
 
       const newTask: TransferTask = {
         id: taskId,
@@ -443,7 +446,7 @@ export function App() {
           onGoHome={() => platform && loadLocalDirectory(platform.home_dir)}
           onRefresh={() => loadLocalDirectory(localPath)}
           onToggleHidden={() => setLocalShowHidden(!localShowHidden)}
-          onTransferItems={(items, targetDir) => handleTransferItems(items, false, targetDir)}
+          onTransferItems={handleTransferItems}
           onNewFolder={() => setNewFolderTarget({ isRemote: false, parentPath: localPath })}
           onRenameItem={(item) => setRenameTarget({ item, isRemote: false })}
           onDeleteItems={(items) => setDeleteTarget({ items, isRemote: false })}
@@ -462,7 +465,7 @@ export function App() {
             onGoHome={() => loadRemoteDirectory('~')}
             onRefresh={() => loadRemoteDirectory(remotePath)}
             onToggleHidden={() => setRemoteShowHidden(!remoteShowHidden)}
-            onTransferItems={(items, targetDir) => handleTransferItems(items, true, targetDir)}
+            onTransferItems={handleTransferItems}
             onEditItem={handleEditRemoteItem}
             onNewFolder={() => setNewFolderTarget({ isRemote: true, parentPath: remotePath })}
             onRenameItem={(item) => setRenameTarget({ item, isRemote: true })}
