@@ -1,17 +1,34 @@
 # 🍡 MochiSCP (麻糬SCP)
 
-> **The sweetest, lightweight dual-pane SFTP/SCP client for macOS & beyond.**  
-> Inspired by classic WinSCP, redesigned with warm pastel pink aesthetics, ultra-fast native performance, and seamless external editor auto-sync.
+<p align="center">
+  <img src="src-tauri/icons/128x128@2x.png" alt="MochiSCP Icon" width="128" />
+  <br />
+  <strong>The sweetest, lightweight dual-pane SFTP/SCP client for macOS & beyond.</strong>
+  <br />
+  <sub>Inspired by classic WinSCP, redesigned with warm pastel pink aesthetics, ultra-fast native performance, and seamless external editor auto-sync.</sub>
+</p>
 
-![MochiSCP Preview](src-tauri/icons/128x128@2x.png)
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-preview">Preview</a> •
+  <a href="#-getting-started">Getting Started</a> •
+  <a href="#-shortcuts">Shortcuts</a> •
+  <a href="#-license">License</a>
+</p>
+
+---
+
+## 📸 Preview
+
+![MochiSCP Workspace](docs/screenshots/mochiscp_main.png)
 
 ---
 
 ## ✨ Features
 
-- 🌸 **Warm & Sweet Aesthetic**: Delightful pastel pink ("Sakura Rose") theme, soft glassmorphism, and clear contrast.
-- ⚡ **Ultra-Lightweight & Blazing Fast**: Built with **Tauri 2 + Rust + React 19**, packaged into an ultra-compact ~**3.2 MB** native installer (vs ~150-200MB in Electron).
-- 🔄 **Dual-Pane Interface**: Classical Norton Commander / WinSCP dual-pane workspace (Local on the left, Remote SFTP on the right).
+- 🌸 **Warm & Sweet Aesthetic**: Delightful pastel pink ("Sakura Rose") theme, soft frosted glassmorphism, and clear high-contrast typography.
+- ⚡ **Ultra-Lightweight & Blazing Fast**: Built with **Tauri 2 + Rust + React 19**, with a standalone app bundle size of only ~**12 MB** (installer DMG ~4.5 MB), compared to ~150–200 MB for typical Electron-based tools.
+- 🔄 **Classic Dual-Pane Interface**: Classical Norton Commander / WinSCP dual-pane layout (Local filesystem on the left, Remote SFTP on the right).
 - 🖱️ **Smooth Drag & Drop**: Native drag-and-drop between panes for instant uploads and downloads.
 - 📝 **Remote File Edit & Auto-Sync**: Double-click or press `F4` to edit remote files directly in your favorite editor (VS Code, Cursor, Zed, TextEdit); edits auto-sync back to the server upon save!
 - 🔐 **Secure Credential Storage**: Apple Keychain / OS Secret Service integration for safe password and passphrase storage.
@@ -37,10 +54,12 @@ pnpm tauri dev
 
 ### Production Build
 ```bash
-# Build native release DMG & App
+# Build native release DMG & App bundle
 pnpm tauri build
 ```
-Built artifacts will be placed in `src-tauri/target/release/bundle/dmg/MochiSCP_0.1.0_aarch64.dmg`.
+Built artifacts will be placed in:
+- **macOS App**: `src-tauri/target/release/bundle/macos/MochiSCP.app` (~12 MB)
+- **DMG Installer**: `src-tauri/target/release/bundle/dmg/MochiSCP_0.1.0_aarch64.dmg` (~4.5 MB)
 
 ---
 
