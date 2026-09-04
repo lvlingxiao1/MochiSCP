@@ -4,7 +4,7 @@ import { FileItem } from '../../types';
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
-  item: FileItem | null;
+  items: FileItem[];
   isRemote: boolean;
   onClose: () => void;
   onConfirm: () => Promise<void>;
@@ -12,14 +12,14 @@ interface DeleteConfirmModalProps {
 
 export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   isOpen,
-  item,
+  items,
   isRemote,
   onClose,
   onConfirm,
 }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
-  if (!isOpen || !item) return null;
+  if (!isOpen || items.length === 0) return null;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -30,6 +30,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       setIsDeleting(false);
     }
   };
+
+  const isSingle = items.length === 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-pop-in">
@@ -52,17 +54,31 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             <div className="p-2 rounded-lg bg-rose-500/10 text-rose-400 shrink-0 mt-0.5">
               <AlertTriangle className="w-5 h-5" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <p className="text-slate-200 font-medium">
-                Are you sure you want to delete this {item.is_dir ? 'folder' : 'file'}?
+                {isSingle
+                  ? `Are you sure you want to delete this ${items[0].is_dir ? 'folder' : 'file'}?`
+                  : `Are you sure you want to delete these ${items.length} items?`}
               </p>
-              <p className="text-slate-400 font-mono text-[11px] break-all bg-slate-950/40 p-1.5 rounded border border-slate-800">
-                {item.name}
-              </p>
-              <p className="text-[11px] text-slate-500">
+
+              {isSingle ? (
+                <p className="text-slate-400 font-mono text-[11px] break-all bg-slate-950/40 p-1.5 rounded border border-slate-800">
+                  {items[0].name}
+                </p>
+              ) : (
+                <div className="max-h-24 overflow-y-auto bg-slate-950/40 p-1.5 rounded border border-slate-800 space-y-0.5">
+                  {items.map((it) => (
+                    <div key={it.path} className="text-slate-400 font-mono text-[10px] truncate">
+                      • {it.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500 pt-1">
                 {isRemote
-                  ? '⚠️ This will be permanently deleted from the remote server.'
-                  : '🗑️ This item will be moved to macOS Trash.'}
+                  ? '⚠️ Items will be permanently deleted from the remote server.'
+                  : '🗑️ Items will be moved to macOS Trash.'}
               </p>
             </div>
           </div>
@@ -81,7 +97,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               disabled={isDeleting}
               className="px-4 py-1.5 rounded-lg font-semibold bg-rose-500 hover:bg-rose-400 text-white transition-all shadow-sm active:scale-95"
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? 'Deleting...' : `Delete ${items.length > 1 ? `(${items.length})` : ''}`}
             </button>
           </div>
         </div>

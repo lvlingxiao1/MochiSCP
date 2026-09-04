@@ -10,6 +10,8 @@ import {
   ArrowUpDown,
   Laptop,
   Server,
+  Upload,
+  Download,
 } from 'lucide-react';
 import { DriveInfo, FileItem } from '../../types';
 import { formatFileSize, formatTimestamp, octalToSymbolic } from '../../utils/format';
@@ -31,11 +33,11 @@ interface FilePaneProps {
   onGoHome?: () => void;
   onRefresh: () => void;
   onToggleHidden: () => void;
-  onTransferItem: (item: FileItem) => void;
+  onTransferItems: (items: FileItem[], targetDir?: string) => void;
   onEditItem?: (item: FileItem) => void;
   onNewFolder: () => void;
   onRenameItem: (item: FileItem) => void;
-  onDeleteItem: (item: FileItem) => void;
+  onDeleteItems: (items: FileItem[]) => void;
   onChmodItem?: (item: FileItem) => void;
 }
 
@@ -51,19 +53,24 @@ export const FilePane: React.FC<FilePaneProps> = ({
   onGoHome,
   onRefresh,
   onToggleHidden,
-  onTransferItem,
+  onTransferItems,
   onEditItem,
   onNewFolder,
   onRenameItem,
-  onDeleteItem,
+  onDeleteItems,
   onChmodItem,
 }) => {
-  const [selectedItem, setSelectedItem] = useState<FileItem | null>(null);
+  const [selectedItems, setSelectedItems] = useState<FileItem[]>([]);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditingPath, setIsEditingPath] = useState(false);
   const [inputPath, setInputPath] = useState(currentPath);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  // Drag & drop states
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dropTargetFolder, setDropTargetFolder] = useState<string | null>(null);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -76,7 +83,8 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
   useEffect(() => {
     setInputPath(currentPath);
-    setSelectedItem(null);
+    setSelectedItems([]);
+    setLastSelectedIndex(null);
   }, [currentPath]);
 
   // Breadcrumbs parsing
@@ -128,6 +136,10 @@ export const FilePane: React.FC<FilePaneProps> = ({
     });
   }, [items, searchQuery, sortField, sortOrder]);
 
+  const selectedPaths = useMemo(() => {
+    return new Set(selectedItems.map((i) => i.path));
+  }, [selectedItems]);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -150,20 +162,51 @@ export const FilePane: React.FC<FilePaneProps> = ({
     }
   };
 
+  // Selection logic: Single, Command/Ctrl toggle, Shift range
+  const handleItemClick = (item: FileItem, index: number, e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      // Toggle item
+      if (selectedPaths.has(item.path)) {
+        setSelectedItems((prev) => prev.filter((i) => i.path !== item.path));
+      } else {
+        setSelectedItems((prev) => [...prev, item]);
+      }
+      setLastSelectedIndex(index);
+    } else if (e.shiftKey && lastSelectedIndex !== null) {
+      // Range select
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      const range = displayItems.slice(start, end + 1);
+      setSelectedItems(range);
+    } else {
+      // Single select
+      setSelectedItems([item]);
+      setLastSelectedIndex(index);
+    }
+  };
+
   const handleItemDoubleClick = (item: FileItem) => {
     if (item.is_dir) {
       onNavigate(item.path);
     } else if (isRemote && onEditItem) {
       onEditItem(item);
     } else {
-      onTransferItem(item);
+      onTransferItems([item]);
     }
   };
 
   const handleContextMenu = (e: React.MouseEvent, item: FileItem | null) => {
     e.preventDefault();
     e.stopPropagation();
-    if (item) setSelectedItem(item);
+
+    if (item) {
+      if (!selectedPaths.has(item.path)) {
+        setSelectedItems([item]);
+        const idx = displayItems.findIndex((i) => i.path === item.path);
+        setLastSelectedIndex(idx !== -1 ? idx : null);
+      }
+    }
+
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -179,12 +222,111 @@ export const FilePane: React.FC<FilePaneProps> = ({
     }
   };
 
+  // Keyboard Shortcuts (Select All Cmd+A, Transfer F5, Delete F8)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      setSelectedItems(displayItems);
+    } else if (e.key === 'F5' && selectedItems.length > 0) {
+      e.preventDefault();
+      onTransferItems(selectedItems);
+    } else if ((e.key === 'F8' || (e.metaKey && e.key === 'Backspace')) && selectedItems.length > 0) {
+      e.preventDefault();
+      onDeleteItems(selectedItems);
+    } else if (e.key === 'Enter' && selectedItems.length === 1) {
+      const item = selectedItems[0];
+      handleItemDoubleClick(item);
+    }
+  };
+
+  // Drag & Drop Handlers
+  const handleDragStart = (e: React.DragEvent, item: FileItem) => {
+    // If the dragged item is not part of selectedItems, select it
+    let itemsToDrag = selectedItems;
+    if (!selectedPaths.has(item.path)) {
+      itemsToDrag = [item];
+      setSelectedItems([item]);
+    }
+
+    e.dataTransfer.effectAllowed = 'copy';
+    const payload = {
+      source: isRemote ? 'remote' : 'local',
+      sourcePath: currentPath,
+      items: itemsToDrag,
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(payload));
+  };
+
+  const handlePaneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  };
+
+  const handlePaneDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+      setDropTargetFolder(null);
+    }
+  };
+
+  const handlePaneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    setDropTargetFolder(null);
+
+    try {
+      const dataStr = e.dataTransfer.getData('application/json');
+      if (!dataStr) return;
+      const data = JSON.parse(dataStr);
+
+      // Only transfer if dragged from the opposite pane
+      if (data.source !== (isRemote ? 'remote' : 'local')) {
+        const destination = dropTargetFolder || currentPath;
+        onTransferItems(data.items, destination);
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped data:', err);
+    }
+  };
+
+  // Calculate selected total size
+  const totalSelectedSize = useMemo(() => {
+    return selectedItems.reduce((acc, item) => acc + (item.is_dir ? 0 : item.size), 0);
+  }, [selectedItems]);
+
   return (
     <div
       ref={containerRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       onContextMenu={(e) => handleContextMenu(e, null)}
-      className="flex-1 flex flex-col h-full bg-slate-900/60 border-r border-slate-700/60 last:border-r-0 select-none overflow-hidden relative"
+      onDragOver={handlePaneDragOver}
+      onDragLeave={handlePaneDragLeave}
+      onDrop={handlePaneDrop}
+      className="flex-1 flex flex-col h-full bg-slate-900/60 border-r border-slate-700/60 last:border-r-0 select-none overflow-hidden relative focus:outline-none"
     >
+      {/* Visual Drag & Drop Overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-40 bg-sky-950/80 backdrop-blur-xs border-2 border-dashed border-sky-400 flex flex-col items-center justify-center pointer-events-none animate-pop-in">
+          <div className="p-4 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex flex-col items-center gap-2 shadow-2xl">
+            {isRemote ? (
+              <Upload className="w-8 h-8 text-sky-400 animate-bounce" />
+            ) : (
+              <Download className="w-8 h-8 text-sky-400 animate-bounce" />
+            )}
+            <span className="text-sm font-bold text-sky-100">
+              Drop here to {isRemote ? 'Upload to Remote' : 'Download to Local'}
+            </span>
+            {dropTargetFolder && (
+              <span className="text-xs text-sky-300 font-mono bg-sky-900/60 px-2 py-0.5 rounded">
+                Into: {dropTargetFolder}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Pane Header */}
       <div className="h-10 border-b border-slate-700/60 bg-slate-800/60 px-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -257,7 +399,6 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
       {/* Path Breadcrumb & Search Bar */}
       <div className="border-b border-slate-800 bg-slate-900/40 px-3 py-1.5 flex items-center gap-2">
-        {/* Breadcrumb or Direct Path Input */}
         <div className="flex-1 min-w-0">
           {isEditingPath ? (
             <form onSubmit={handlePathSubmit} className="flex items-center">
@@ -331,7 +472,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
         </div>
         <div
           onClick={() => handleSort('size')}
-          className="w-20 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-slate-200"
+          className="w-24 text-right flex items-center justify-end gap-1 cursor-pointer hover:text-slate-200"
         >
           <span>Size</span>
           {sortField === 'size' && (
@@ -368,17 +509,35 @@ export const FilePane: React.FC<FilePaneProps> = ({
             )}
           </div>
         ) : (
-          displayItems.map((item) => {
-            const isSelected = selectedItem?.path === item.path;
+          displayItems.map((item, index) => {
+            const isSelected = selectedPaths.has(item.path);
+            const isRowDropTarget = dropTargetFolder === item.path;
+
             return (
               <div
                 key={item.path}
-                onClick={() => setSelectedItem(item)}
+                draggable
+                onDragStart={(e) => handleDragStart(e, item)}
+                onDragOver={(e) => {
+                  if (item.is_dir) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDropTargetFolder(item.path);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dropTargetFolder === item.path) {
+                    setDropTargetFolder(null);
+                  }
+                }}
+                onClick={(e) => handleItemClick(item, index, e)}
                 onDoubleClick={() => handleItemDoubleClick(item)}
                 onContextMenu={(e) => handleContextMenu(e, item)}
                 className={`flex items-center px-3 py-1.5 text-xs transition-colors cursor-default ${
-                  isSelected
-                    ? 'bg-sky-500/20 text-white'
+                  isRowDropTarget
+                    ? 'bg-sky-500/30 border border-sky-400'
+                    : isSelected
+                    ? 'bg-sky-500/25 text-white font-medium'
                     : 'text-slate-300 hover:bg-slate-800/50'
                 }`}
               >
@@ -389,7 +548,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
                 </div>
 
                 {/* Size */}
-                <div className="w-20 text-right font-mono text-[11px] text-slate-400 shrink-0">
+                <div className="w-24 text-right font-mono text-[11px] text-slate-400 shrink-0">
                   {item.is_dir
                     ? item.is_symlink
                       ? '<LINK DIR>'
@@ -419,15 +578,17 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
       {/* Pane Footer Info */}
       <div className="h-6 border-t border-slate-800/80 bg-slate-900/80 px-3 flex items-center justify-between text-[11px] text-slate-400">
-        <div>
+        <div className="truncate">
           <span>{displayItems.length} items</span>
-          {selectedItem && (
-            <span className="ml-2 text-sky-300">
-              Selected: {selectedItem.name} ({selectedItem.is_dir ? 'DIR' : formatFileSize(selectedItem.size)})
+          {selectedItems.length > 0 && (
+            <span className="ml-2 text-sky-300 font-medium">
+              {selectedItems.length === 1
+                ? `Selected: ${selectedItems[0].name} (${selectedItems[0].is_dir ? 'DIR' : formatFileSize(selectedItems[0].size)})`
+                : `Selected: ${selectedItems.length} items (${formatFileSize(totalSelectedSize)})`}
             </span>
           )}
         </div>
-        <div className="text-[10px] text-slate-500">
+        <div className="text-[10px] text-slate-500 shrink-0 ml-2">
           {isRemote ? 'Remote (SFTP)' : 'Local FS'}
         </div>
       </div>
@@ -438,19 +599,19 @@ export const FilePane: React.FC<FilePaneProps> = ({
           x={contextMenu.x}
           y={contextMenu.y}
           item={contextMenu.item}
+          selectedCount={selectedItems.length}
           isRemote={isRemote}
           onClose={() => setContextMenu(null)}
-          onTransfer={() => contextMenu.item && onTransferItem(contextMenu.item)}
+          onTransfer={() => onTransferItems(selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : [])}
           onEdit={() => contextMenu.item && onEditItem && onEditItem(contextMenu.item)}
           onOpen={() => contextMenu.item && onNavigate(contextMenu.item.path)}
           onNewFolder={onNewFolder}
           onRename={() => contextMenu.item && onRenameItem(contextMenu.item)}
           onChmod={() => contextMenu.item && onChmodItem && onChmodItem(contextMenu.item)}
-          onDelete={() => contextMenu.item && onDeleteItem(contextMenu.item)}
+          onDelete={() => onDeleteItems(selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : [])}
           onCopyPath={() => {
-            if (contextMenu.item) {
-              navigator.clipboard.writeText(contextMenu.item.path);
-            }
+            const paths = (selectedItems.length > 0 ? selectedItems : contextMenu.item ? [contextMenu.item] : []).map((i) => i.path);
+            navigator.clipboard.writeText(paths.join('\n'));
           }}
         />
       )}

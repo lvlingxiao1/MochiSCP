@@ -49,7 +49,7 @@ export function App() {
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [chmodTarget, setChmodTarget] = useState<FileItem | null>(null);
   const [newFolderTarget, setNewFolderTarget] = useState<{ isRemote: boolean; parentPath: string } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ item: FileItem; isRemote: boolean } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ items: FileItem[]; isRemote: boolean } | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ item: FileItem; isRemote: boolean } | null>(null);
 
   // Toasts
@@ -232,49 +232,64 @@ export function App() {
   };
 
   // Transfer Handlers (Upload / Download)
-  const handleTransferItem = async (item: FileItem, isRemoteSource: boolean) => {
+  const handleTransferItems = async (
+    items: FileItem[],
+    isRemoteSource: boolean,
+    targetDir?: string
+  ) => {
     if (!isConnected || !activeSession) {
       addToast('error', 'Connect to an SFTP server first to transfer files.');
       return;
     }
+    if (items.length === 0) return;
 
-    const taskId = crypto.randomUUID();
     const isUpload = !isRemoteSource;
+    const destFolder = targetDir
+      ? targetDir
+      : isUpload
+      ? remotePath
+      : localPath;
 
-    let src = item.path;
-    let dest = isUpload
-      ? `${remotePath === '/' ? '' : remotePath}/${item.name}`
-      : `${localPath === '/' ? '' : localPath}/${item.name}`;
-
-    const newTask: TransferTask = {
-      id: taskId,
-      name: item.name,
-      local_path: isUpload ? src : dest,
-      remote_path: isUpload ? dest : src,
-      direction: isUpload ? 'upload' : 'download',
-      size: item.size,
-      transferred: 0,
-      speed: 0,
-      status: 'transferring',
-      started_at: Date.now(),
-    };
-
-    setTransfers((prev) => [newTask, ...prev]);
     setIsQueueOpen(true);
 
-    try {
-      if (isUpload) {
-        await ipc.uploadFile(activeSession.id, src, dest, taskId);
-      } else {
-        await ipc.downloadFile(activeSession.id, src, dest, taskId);
+    for (const item of items) {
+      const taskId = crypto.randomUUID();
+      const separator = isUpload ? '/' : platform?.sep || '/';
+      const dest = `${destFolder.endsWith(separator) ? destFolder : destFolder + separator}${item.name}`;
+
+      const newTask: TransferTask = {
+        id: taskId,
+        name: item.name,
+        local_path: isUpload ? item.path : dest,
+        remote_path: isUpload ? dest : item.path,
+        direction: isUpload ? 'upload' : 'download',
+        size: item.size,
+        transferred: 0,
+        speed: 0,
+        status: 'transferring',
+        started_at: Date.now(),
+      };
+
+      setTransfers((prev) => [newTask, ...prev]);
+
+      try {
+        if (isUpload) {
+          await ipc.uploadFile(activeSession.id, item.path, dest, taskId);
+        } else {
+          await ipc.downloadFile(activeSession.id, item.path, dest, taskId);
+        }
+      } catch (e: any) {
+        addToast('error', `Transfer failed for ${item.name}: ${e}`);
+        setTransfers((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: 'failed', error: e.toString() } : t))
+        );
       }
-      addToast('success', `Finished ${isUpload ? 'upload' : 'download'}: ${item.name}`);
-    } catch (e: any) {
-      addToast('error', `Transfer failed: ${e}`);
-      setTransfers((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status: 'failed', error: e.toString() } : t))
-      );
     }
+
+    addToast(
+      'success',
+      `Queued ${items.length} item${items.length > 1 ? 's' : ''} for ${isUpload ? 'upload' : 'download'}.`
+    );
   };
 
   // Remote File Edit & Auto-Sync (WinSCP Killer Feature)
@@ -346,22 +361,28 @@ export function App() {
     }
   };
 
-  const handleDeleteItem = async () => {
+  const handleDeleteItems = async () => {
     if (!deleteTarget) return;
-    const { item, isRemote } = deleteTarget;
+    const { items, isRemote } = deleteTarget;
 
-    try {
-      if (isRemote && activeSession) {
-        await ipc.deleteRemoteItem(activeSession.id, item.path, item.is_dir);
-        loadRemoteDirectory(remotePath);
-        addToast('success', `Deleted "${item.name}" from server.`);
-      } else {
-        await ipc.deleteLocalItem(item.path, false);
-        loadLocalDirectory(localPath);
-        addToast('success', `Moved "${item.name}" to Trash.`);
+    for (const item of items) {
+      try {
+        if (isRemote && activeSession) {
+          await ipc.deleteRemoteItem(activeSession.id, item.path, item.is_dir);
+        } else {
+          await ipc.deleteLocalItem(item.path, false);
+        }
+      } catch (e: any) {
+        addToast('error', `Failed to delete ${item.name}: ${e}`);
       }
-    } catch (e: any) {
-      addToast('error', `Delete failed: ${e}`);
+    }
+
+    if (isRemote) {
+      loadRemoteDirectory(remotePath);
+      addToast('success', `Deleted ${items.length} item(s) from server.`);
+    } else {
+      loadLocalDirectory(localPath);
+      addToast('success', `Moved ${items.length} item(s) to Trash.`);
     }
   };
 
@@ -409,10 +430,10 @@ export function App() {
           onGoHome={() => platform && loadLocalDirectory(platform.home_dir)}
           onRefresh={() => loadLocalDirectory(localPath)}
           onToggleHidden={() => setLocalShowHidden(!localShowHidden)}
-          onTransferItem={(item) => handleTransferItem(item, false)}
+          onTransferItems={(items, targetDir) => handleTransferItems(items, false, targetDir)}
           onNewFolder={() => setNewFolderTarget({ isRemote: false, parentPath: localPath })}
           onRenameItem={(item) => setRenameTarget({ item, isRemote: false })}
-          onDeleteItem={(item) => setDeleteTarget({ item, isRemote: false })}
+          onDeleteItems={(items) => setDeleteTarget({ items, isRemote: false })}
         />
 
         {/* Right Pane: Remote SFTP Filesystem */}
@@ -428,11 +449,11 @@ export function App() {
             onGoHome={() => loadRemoteDirectory('~')}
             onRefresh={() => loadRemoteDirectory(remotePath)}
             onToggleHidden={() => setRemoteShowHidden(!remoteShowHidden)}
-            onTransferItem={(item) => handleTransferItem(item, true)}
+            onTransferItems={(items, targetDir) => handleTransferItems(items, true, targetDir)}
             onEditItem={handleEditRemoteItem}
             onNewFolder={() => setNewFolderTarget({ isRemote: true, parentPath: remotePath })}
             onRenameItem={(item) => setRenameTarget({ item, isRemote: true })}
-            onDeleteItem={(item) => setDeleteTarget({ item, isRemote: true })}
+            onDeleteItems={(items) => setDeleteTarget({ items, isRemote: true })}
             onChmodItem={(item) => setChmodTarget(item)}
           />
         ) : (
@@ -493,10 +514,10 @@ export function App() {
 
       <DeleteConfirmModal
         isOpen={!!deleteTarget}
-        item={deleteTarget?.item || null}
+        items={deleteTarget?.items || []}
         isRemote={deleteTarget?.isRemote || false}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteItem}
+        onConfirm={handleDeleteItems}
       />
 
       <RenameModal

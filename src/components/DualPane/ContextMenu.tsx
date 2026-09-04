@@ -15,6 +15,7 @@ export interface ContextMenuProps {
   x: number;
   y: number;
   item: FileItem | null;
+  selectedCount?: number;
   isRemote: boolean;
   onClose: () => void;
   onTransfer: () => void;
@@ -31,6 +32,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   x,
   y,
   item,
+  selectedCount = 1,
   isRemote,
   onClose,
   onTransfer,
@@ -72,7 +74,47 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       style={{ left: `${posX}px`, top: `${posY}px` }}
       className="fixed z-50 w-52 py-1.5 bg-slate-800/95 backdrop-blur-md border border-slate-700/80 rounded-lg shadow-xl text-xs text-slate-200 animate-pop-in select-none"
     >
-      {item && (
+      {selectedCount > 1 ? (
+        <>
+          <button
+            onClick={() => {
+              onTransfer();
+              onClose();
+            }}
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-sky-600/30 hover:text-white transition-colors text-left font-medium text-sky-300"
+          >
+            <div className="flex items-center gap-2">
+              {isRemote ? (
+                <Download className="w-3.5 h-3.5 text-sky-400" />
+              ) : (
+                <Upload className="w-3.5 h-3.5 text-sky-400" />
+              )}
+              <span>
+                {isRemote
+                  ? `Download (${selectedCount} items)`
+                  : `Upload (${selectedCount} items)`}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-400">F5</span>
+          </button>
+
+          <div className="h-[1px] bg-slate-700/60 my-1" />
+
+          <button
+            onClick={() => {
+              onDelete();
+              onClose();
+            }}
+            className="w-full flex items-center justify-between px-3 py-1.5 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+              <span>Delete ({selectedCount} items)</span>
+            </div>
+            <span className="text-[10px] text-rose-400/80">F8</span>
+          </button>
+        </>
+      ) : item ? (
         <>
           {item.is_dir ? (
             <button
@@ -128,7 +170,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
           <div className="h-[1px] bg-slate-700/60 my-1" />
         </>
-      )}
+      ) : null}
 
       <button
         onClick={() => {
@@ -144,7 +186,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <span className="text-[10px] text-slate-400">F7</span>
       </button>
 
-      {item && (
+      {item && selectedCount <= 1 && (
         <>
           <button
             onClick={() => {
