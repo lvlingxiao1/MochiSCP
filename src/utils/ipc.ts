@@ -15,11 +15,9 @@ export const ipc = {
 
   // Sessions
   listSessions: () => invoke<SessionConfig[]>('list_sessions'),
-  saveSession: (session: SessionConfig, secret?: string) =>
-    invoke<void>('save_session', { session, secret: secret || null }),
+  saveSession: (session: SessionConfig) =>
+    invoke<void>('save_session', { session }),
   deleteSession: (sessionId: string) => invoke<void>('delete_session', { sessionId }),
-  getSessionSecret: (sessionId: string) =>
-    invoke<string | null>('get_session_secret', { sessionId }),
 
   // SFTP & Remote
   connectSftp: (config: SessionConfig, secret?: string) =>

@@ -32,7 +32,7 @@
 - 🔄 **Classic Dual-Pane Interface**: Classical Norton Commander / WinSCP dual-pane layout (Local filesystem on the left, Remote SFTP on the right).
 - 🖱️ **Smooth Drag & Drop**: Native drag-and-drop between panes for instant uploads and downloads.
 - 📝 **Remote File Edit & Auto-Sync**: Double-click remote files to open directly in your favorite editor (VS Code, Cursor, Zed, TextEdit); edits auto-sync back to the server upon save!
-- 🔐 **Secure Credential Storage**: Apple Keychain / OS Secret Service integration for safe password and passphrase storage.
+- 🛡️ **Zero-Credential Architecture**: For maximum security and frictionless cross-platform portability, passwords and passphrases are never stored on disk or platform keychains. Use standard SSH Public Keys (`IdentityFile`) or SSH Agent for seamless passwordless logins.
 - 💻 **Integrated Terminal Launcher**: Launch native macOS Terminal or iTerm2 directly into the current remote directory with one click.
 - 🔗 **Symlink & Permissions Management**: Full symlink path resolution, recursive directory traversal, and chmod permission matrix modal.
 

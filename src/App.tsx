@@ -201,8 +201,8 @@ export function App() {
   }, [localPath, remotePath, isConnected, loadLocalDirectory, loadRemoteDirectory, addToast]);
 
   // Session Handlers (Directly backed by ~/.ssh/config)
-  const handleSaveSession = async (session: SessionConfig, secret?: string) => {
-    await ipc.saveSession(session, secret);
+  const handleSaveSession = async (session: SessionConfig) => {
+    await ipc.saveSession(session);
     const updated = await ipc.listSessions();
     setSessions(updated);
     addToast('success', `Host profile "${session.name}" saved to ~/.ssh/config`);
@@ -537,7 +537,6 @@ export function App() {
         onSaveSession={handleSaveSession}
         onDeleteSession={handleDeleteSession}
         onConnect={handleConnect}
-        onGetSecret={ipc.getSessionSecret}
       />
 
       <ChmodModal

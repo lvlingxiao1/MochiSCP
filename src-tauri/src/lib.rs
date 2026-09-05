@@ -52,18 +52,13 @@ fn list_sessions() -> Result<Vec<SessionConfig>, String> {
 }
 
 #[tauri::command]
-fn save_session(session: SessionConfig, secret: Option<String>) -> Result<(), String> {
-    session::save_session(session, secret)
+fn save_session(session: SessionConfig) -> Result<(), String> {
+    session::save_session(session)
 }
 
 #[tauri::command]
 fn delete_session(session_id: String) -> Result<(), String> {
     session::delete_session(&session_id)
-}
-
-#[tauri::command]
-fn get_session_secret(session_id: String) -> Result<Option<String>, String> {
-    session::get_session_secret(&session_id)
 }
 
 // === SFTP & Remote Filesystem Commands ===
@@ -216,7 +211,6 @@ pub fn run() {
             list_sessions,
             save_session,
             delete_session,
-            get_session_secret,
             connect_sftp,
             disconnect_sftp,
             is_sftp_connected,

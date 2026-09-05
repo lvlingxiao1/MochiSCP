@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Play,
   Save,
+  ShieldCheck,
 } from 'lucide-react';
 import { AuthType, SessionConfig } from '../../types';
 
@@ -17,10 +18,9 @@ interface SessionModalProps {
   sessions: SessionConfig[];
   initialSessionId?: string;
   onClose: () => void;
-  onSaveSession: (session: SessionConfig, secret?: string) => Promise<void>;
+  onSaveSession: (session: SessionConfig) => Promise<void>;
   onDeleteSession: (sessionId: string) => Promise<void>;
   onConnect: (session: SessionConfig, secret?: string) => Promise<void>;
-  onGetSecret: (sessionId: string) => Promise<string | null>;
 }
 
 export const SessionModal: React.FC<SessionModalProps> = ({
@@ -31,7 +31,6 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   onSaveSession,
   onDeleteSession,
   onConnect,
-  onGetSecret,
 }) => {
   const [selectedId, setSelectedId] = useState<string>(() => {
     if (initialSessionId && sessions.some((s) => s.id === initialSessionId)) {
@@ -109,15 +108,11 @@ export const SessionModal: React.FC<SessionModalProps> = ({
         setKeyPath(existing.key_path || '');
         setInitialPath(existing.initial_remote_path || '');
         setColor(existing.color || '#38bdf8');
+        setSecret('');
         setErrorMsg(null);
-
-        // Fetch stored password/passphrase
-        onGetSecret(existing.id).then((pwd) => {
-          setSecret(pwd || '');
-        });
       }
     }
-  }, [selectedId, isOpen, sessions, onGetSecret]);
+  }, [selectedId, isOpen, sessions]);
 
   if (!isOpen) return null;
 
@@ -153,7 +148,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
         created_at: Date.now(),
       };
 
-      await onSaveSession(config, secret);
+      await onSaveSession(config);
       setSelectedId(config.id);
     } catch (e: any) {
       setErrorMsg(e.toString());
@@ -194,7 +189,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       };
 
       // Save before connecting
-      await onSaveSession(config, secret);
+      await onSaveSession(config);
       await onConnect(config, secret);
       onClose();
     } catch (e: any) {
@@ -399,26 +394,36 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                   }`}
                 >
                   <Key className="w-3.5 h-3.5" />
-                  <span>SSH Private Key</span>
+                  <span>SSH Key / Agent</span>
                 </button>
+              </div>
+
+              {/* Informational tip */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-50/70 border border-pink-200/60 text-[11px] text-stone-600">
+                <ShieldCheck className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                <span>Credentials are not stored for security. Set up an SSH Public Key for seamless passwordless login.</span>
               </div>
 
               {authType === 'password' ? (
                 <div className="space-y-1 pt-1">
-                  <label className="text-xs text-stone-600 font-medium">Password (Stored in Apple Keychain)</label>
+                  <label className="text-xs text-stone-600 font-medium flex items-center justify-between">
+                    <span>Password</span>
+                    <span className="text-[10px] text-stone-400 font-normal">Temporary for this session, not saved</span>
+                  </label>
                   <input
                     type="password"
                     value={secret}
                     onChange={(e) => setSecret(e.target.value)}
-                    placeholder="Enter password..."
+                    placeholder="Enter password to connect..."
                     className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                   />
                 </div>
               ) : (
                 <div className="space-y-2 pt-1">
                   <div className="space-y-1">
-                    <label className="text-xs text-stone-600 font-medium">
-                      IdentityFile <span className="text-stone-400 font-normal">(Private Key File Path)</span>
+                    <label className="text-xs text-stone-600 font-medium flex items-center justify-between">
+                      <span>IdentityFile <span className="text-stone-400 font-normal">(Private Key Path)</span></span>
+                      <span className="text-[10px] text-stone-400 font-normal">Leave empty for SSH Agent / ~/.ssh/id_*</span>
                     </label>
                     <input
                       type="text"
@@ -429,7 +434,10 @@ export const SessionModal: React.FC<SessionModalProps> = ({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-stone-600 font-medium">Key Passphrase (Optional, Stored in Apple Keychain)</label>
+                    <label className="text-xs text-stone-600 font-medium flex items-center justify-between">
+                      <span>Key Passphrase <span className="text-stone-400 font-normal">(Optional)</span></span>
+                      <span className="text-[10px] text-stone-400 font-normal">Leave empty if unencrypted</span>
+                    </label>
                     <input
                       type="password"
                       value={secret}

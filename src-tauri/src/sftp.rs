@@ -47,20 +47,60 @@ impl SftpPool {
             }
             AuthType::PrivateKey => {
                 let key_path_str = config.key_path.as_deref().unwrap_or("");
-                if key_path_str.is_empty() {
-                    return Err("Private key path is required".to_string());
+                let mut authenticated = false;
+
+                if !key_path_str.is_empty() {
+                    let expanded_path = crate::ssh_config::expand_tilde(key_path_str);
+                    if !expanded_path.exists() {
+                        return Err(format!("Private key file not found: {} ({})", key_path_str, expanded_path.display()));
+                    }
+                    if sess.userauth_pubkey_file(
+                        &config.username,
+                        None,
+                        &expanded_path,
+                        secret.as_deref().filter(|s| !s.is_empty()),
+                    ).is_ok() && sess.authenticated() {
+                        authenticated = true;
+                    }
                 }
-                let expanded_path = crate::ssh_config::expand_tilde(key_path_str);
-                if !expanded_path.exists() {
-                    return Err(format!("Private key file not found: {} ({})", key_path_str, expanded_path.display()));
+
+                // If not authenticated yet, try ssh-agent
+                if !authenticated {
+                    if let Ok(mut agent) = sess.agent() {
+                        if agent.connect().is_ok() && agent.list_identities().is_ok() {
+                            if let Ok(identities) = agent.identities() {
+                                for identity in identities {
+                                    if agent.userauth(&config.username, &identity).is_ok() && sess.authenticated() {
+                                        authenticated = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                sess.userauth_pubkey_file(
-                    &config.username,
-                    None,
-                    &expanded_path,
-                    secret.as_deref(),
-                )
-                .map_err(|e| format!("Public key authentication failed: {}", e))?;
+
+                // If still not authenticated and no specific key was given, try default SSH keys
+                if !authenticated && key_path_str.is_empty() {
+                    for default_key in &["~/.ssh/id_ed25519", "~/.ssh/id_rsa", "~/.ssh/id_ecdsa"] {
+                        let p = crate::ssh_config::expand_tilde(default_key);
+                        if p.exists() {
+                            if sess.userauth_pubkey_file(
+                                &config.username,
+                                None,
+                                &p,
+                                secret.as_deref().filter(|s| !s.is_empty()),
+                            ).is_ok() && sess.authenticated() {
+                                authenticated = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if !authenticated && !sess.authenticated() {
+                    return Err("Public key authentication failed: please check your IdentityFile, passphrase, or SSH agent".to_string());
+                }
             }
         }
 
