@@ -46,7 +46,7 @@ pub fn get_local_drives() -> Result<Vec<DriveInfo>, String> {
         }
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     {
         drives.push(DriveInfo {
             name: "Root".to_string(),
@@ -55,14 +55,37 @@ pub fn get_local_drives() -> Result<Vec<DriveInfo>, String> {
             available_space: None,
         });
 
-        if let Some(home) = dirs::home_dir() {
-            drives.push(DriveInfo {
-                name: "Home".to_string(),
-                mount_point: home.to_string_lossy().to_string(),
-                total_space: None,
-                available_space: None,
-            });
+        // Check for external mounted volumes in /Volumes
+        if let Ok(entries) = std::fs::read_dir("/Volumes") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                // Skip symlink pointing to /
+                if let Ok(target) = std::fs::read_link(&path) {
+                    if target == Path::new("/") {
+                        continue;
+                    }
+                }
+                if let Some(file_name) = path.file_name() {
+                    let name = file_name.to_string_lossy().to_string();
+                    drives.push(DriveInfo {
+                        name,
+                        mount_point: path.to_string_lossy().to_string(),
+                        total_space: None,
+                        available_space: None,
+                    });
+                }
+            }
         }
+    }
+
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    {
+        drives.push(DriveInfo {
+            name: "Root".to_string(),
+            mount_point: "/".to_string(),
+            total_space: None,
+            available_space: None,
+        });
     }
 
     Ok(drives)

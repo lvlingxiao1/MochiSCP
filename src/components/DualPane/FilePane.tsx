@@ -397,18 +397,20 @@ export const FilePane: React.FC<FilePaneProps> = ({
 
         {/* Action icons */}
         <div className="flex items-center gap-1 shrink-0">
-          {drives && drives.length > 1 && (
+          {drives && drives.filter((d) => d.name.toLowerCase() !== 'home').length > 1 && (
             <div className="flex items-center gap-1 mr-1">
-              {drives.map((d) => (
-                <button
-                  key={d.mount_point}
-                  onClick={() => onNavigate(d.mount_point)}
-                  title={d.name}
-                  className="px-1.5 py-0.5 rounded bg-rose-100/80 hover:bg-rose-200 text-[10px] font-mono text-stone-700 cursor-pointer"
-                >
-                  {d.name.includes(':') ? d.name.slice(0, 2) : d.name}
-                </button>
-              ))}
+              {drives
+                .filter((d) => d.name.toLowerCase() !== 'home')
+                .map((d) => (
+                  <button
+                    key={d.mount_point}
+                    onClick={() => onNavigate(d.mount_point)}
+                    title={d.name}
+                    className="px-1.5 py-0.5 rounded bg-rose-100/80 hover:bg-rose-200 text-[10px] font-mono text-stone-700 cursor-pointer"
+                  >
+                    {d.name.includes(':') ? d.name.slice(0, 2) : d.name}
+                  </button>
+                ))}
             </div>
           )}
 
