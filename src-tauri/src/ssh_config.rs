@@ -71,6 +71,17 @@ pub enum SshConfigSection {
     Other(Vec<String>), // Match blocks or other unmanaged sections
 }
 
+fn trim_trailing_blank_lines(host: &mut HostBlock) {
+    while host
+        .items
+        .last()
+        .map(|i| matches!(i, BlockItem::RawLine(s) if s.trim().is_empty()))
+        .unwrap_or(false)
+    {
+        host.items.pop();
+    }
+}
+
 /// Parses an OpenSSH config file preserving all comments, blank lines, indentation and directives.
 pub fn parse_ssh_config(content: &str) -> Vec<SshConfigSection> {
     let mut sections = Vec::new();
@@ -82,9 +93,12 @@ pub fn parse_ssh_config(content: &str) -> Vec<SshConfigSection> {
         let trimmed = line.trim();
 
         // Check for Host keyword
-        if trimmed.starts_with("Host ") || trimmed.starts_with("host ") || trimmed == "Host" || trimmed == "host" {
+        let is_host = trimmed.to_lowercase().starts_with("host ")
+            || trimmed.eq_ignore_ascii_case("host");
+        if is_host {
             // Flush previous section
-            if let Some(h) = current_host.take() {
+            if let Some(mut h) = current_host.take() {
+                trim_trailing_blank_lines(&mut h);
                 sections.push(SshConfigSection::Host(h));
             } else if let Some(o) = current_other.take() {
                 sections.push(SshConfigSection::Other(o));
@@ -100,7 +114,7 @@ pub fn parse_ssh_config(content: &str) -> Vec<SshConfigSection> {
                 .collect();
 
             current_host = Some(HostBlock {
-                host_line: line.to_string(),
+                host_line: format!("Host {}", patterns.join(" ")),
                 patterns,
                 items: Vec::new(),
             });
@@ -108,8 +122,11 @@ pub fn parse_ssh_config(content: &str) -> Vec<SshConfigSection> {
         }
 
         // Check for Match keyword
-        if trimmed.starts_with("Match ") || trimmed.starts_with("match ") || trimmed == "Match" || trimmed == "match" {
-            if let Some(h) = current_host.take() {
+        let is_match = trimmed.to_lowercase().starts_with("match ")
+            || trimmed.eq_ignore_ascii_case("match");
+        if is_match {
+            if let Some(mut h) = current_host.take() {
+                trim_trailing_blank_lines(&mut h);
                 sections.push(SshConfigSection::Host(h));
             } else if let Some(o) = current_other.take() {
                 sections.push(SshConfigSection::Other(o));
@@ -146,7 +163,8 @@ pub fn parse_ssh_config(content: &str) -> Vec<SshConfigSection> {
         current_preamble.push(line.to_string());
     }
 
-    if let Some(h) = current_host {
+    if let Some(mut h) = current_host {
+        trim_trailing_blank_lines(&mut h);
         sections.push(SshConfigSection::Host(h));
     } else if let Some(o) = current_other {
         sections.push(SshConfigSection::Other(o));
@@ -193,8 +211,16 @@ pub fn serialize_ssh_config(sections: &[SshConfigSection]) -> String {
     let mut out = String::new();
 
     for (i, section) in sections.iter().enumerate() {
-        if i > 0 && !out.ends_with("\n\n") && !out.ends_with("\n") {
-            out.push('\n');
+        if i > 0 {
+            while out.ends_with("\n\n\n") {
+                out.pop();
+            }
+            if !out.ends_with("\n\n") {
+                if !out.ends_with('\n') {
+                    out.push('\n');
+                }
+                out.push('\n');
+            }
         }
 
         match section {
@@ -403,6 +429,7 @@ pub fn save_ssh_profile(session: SessionConfig) -> Result<(), String> {
         }
     } else {
         // Append a new Host block
+        let default_indent = detect_file_indent(&sections);
         let mut items = Vec::new();
 
         // Metadata comment
@@ -411,11 +438,11 @@ pub fn save_ssh_profile(session: SessionConfig) -> Result<(), String> {
             session.color.as_deref().unwrap_or("#fb7185"),
             session.initial_remote_path.as_deref().unwrap_or("~")
         );
-        items.push(BlockItem::RawLine(format!("    {}", meta_comment)));
+        items.push(BlockItem::RawLine(format!("{}{}", default_indent, meta_comment)));
 
         // HostName
         items.push(BlockItem::Directive(Directive {
-            indent: "    ".to_string(),
+            indent: default_indent.clone(),
             key: "hostname".to_string(),
             original_key: "HostName".to_string(),
             separator: " ".to_string(),
@@ -424,7 +451,7 @@ pub fn save_ssh_profile(session: SessionConfig) -> Result<(), String> {
 
         // User
         items.push(BlockItem::Directive(Directive {
-            indent: "    ".to_string(),
+            indent: default_indent.clone(),
             key: "user".to_string(),
             original_key: "User".to_string(),
             separator: " ".to_string(),
@@ -434,7 +461,7 @@ pub fn save_ssh_profile(session: SessionConfig) -> Result<(), String> {
         // Port (if not default 22)
         if session.port != 22 {
             items.push(BlockItem::Directive(Directive {
-                indent: "    ".to_string(),
+                indent: default_indent.clone(),
                 key: "port".to_string(),
                 original_key: "Port".to_string(),
                 separator: " ".to_string(),
@@ -446,7 +473,7 @@ pub fn save_ssh_profile(session: SessionConfig) -> Result<(), String> {
         if matches!(session.auth_type, AuthType::PrivateKey) {
             if let Some(ref kp) = clean_key_path {
                 items.push(BlockItem::Directive(Directive {
-                    indent: "    ".to_string(),
+                    indent: default_indent,
                     key: "identityfile".to_string(),
                     original_key: "IdentityFile".to_string(),
                     separator: " ".to_string(),
@@ -499,6 +526,32 @@ pub fn delete_ssh_profile(host_alias: &str) -> Result<(), String> {
     write_ssh_config_file(&config_path, &new_content)
 }
 
+fn detect_host_indent(host: &HostBlock) -> String {
+    for item in &host.items {
+        if let BlockItem::Directive(d) = item {
+            if !d.indent.is_empty() {
+                return d.indent.clone();
+            }
+        }
+    }
+    "  ".to_string()
+}
+
+fn detect_file_indent(sections: &[SshConfigSection]) -> String {
+    for section in sections {
+        if let SshConfigSection::Host(host) = section {
+            for item in &host.items {
+                if let BlockItem::Directive(d) = item {
+                    if !d.indent.is_empty() {
+                        return d.indent.clone();
+                    }
+                }
+            }
+        }
+    }
+    "  ".to_string()
+}
+
 fn has_directive(host: &HostBlock, key_lower: &str) -> bool {
     host.items.iter().any(|item| {
         if let BlockItem::Directive(d) = item {
@@ -524,13 +577,34 @@ fn update_or_add_directive(host: &mut HostBlock, original_key: &str, value: &str
     }
 
     if !updated {
-        host.items.push(BlockItem::Directive(Directive {
-            indent: "    ".to_string(),
+        let indent = detect_host_indent(host);
+        let new_directive = BlockItem::Directive(Directive {
+            indent,
             key: key_lower,
             original_key: original_key.to_string(),
             separator: " ".to_string(),
             value: value.to_string(),
-        }));
+        });
+
+        let last_directive_idx = host.items.iter().rposition(|item| matches!(item, BlockItem::Directive(_)));
+        if let Some(idx) = last_directive_idx {
+            host.items.insert(idx + 1, new_directive);
+        } else {
+            let first_trailing_blank = host
+                .items
+                .iter()
+                .rposition(|item| {
+                    if let BlockItem::RawLine(s) = item {
+                        !s.trim().is_empty()
+                    } else {
+                        true
+                    }
+                })
+                .map(|idx| idx + 1)
+                .unwrap_or(0);
+
+            host.items.insert(first_trailing_blank, new_directive);
+        }
     }
 }
 
@@ -545,18 +619,19 @@ fn remove_directive(host: &mut HostBlock, key_lower: &str) {
 }
 
 fn update_or_add_mochiscp_comment(host: &mut HostBlock, comment_str: &str) {
+    let indent = detect_host_indent(host);
     let mut updated = false;
     for item in &mut host.items {
         if let BlockItem::RawLine(ref mut line) = item {
             if line.trim().starts_with("# MochiSCP:") {
-                *line = format!("    {}", comment_str);
+                *line = format!("{}{}", indent, comment_str);
                 updated = true;
                 break;
             }
         }
     }
     if !updated {
-        host.items.insert(0, BlockItem::RawLine(format!("    {}", comment_str)));
+        host.items.insert(0, BlockItem::RawLine(format!("{}{}", indent, comment_str)));
     }
 }
 
@@ -631,6 +706,32 @@ Host *
         let serialized = serialize_ssh_config(&sections);
         assert!(serialized.contains("User new_user"));
         assert!(serialized.contains("AddressFamily inet6")); // Preserved!
+    }
+
+    #[test]
+    fn test_directive_insertion_order_and_indent() {
+        let sample = "Host test\n  HostName 1.2.3.4\n  User alice\n\nHost next\n  HostName 5.6.7.8\n";
+        let mut sections = parse_ssh_config(sample);
+        if let SshConfigSection::Host(ref mut h) = sections[0] {
+            update_or_add_directive(h, "IdentityFile", "~/.ssh/id_rsa");
+        }
+        let serialized = serialize_ssh_config(&sections);
+        assert!(
+            serialized.contains("Host test\n  HostName 1.2.3.4\n  User alice\n  IdentityFile ~/.ssh/id_rsa\n\nHost next"),
+            "Serialized output was: \n{}",
+            serialized
+        );
+    }
+
+    #[test]
+    fn test_host_line_indent_normalization() {
+        let sample = "  Host claw\n  HostName 10.0.0.146\n  User lvlingxiao\n";
+        let sections = parse_ssh_config(sample);
+        if let SshConfigSection::Host(ref h) = sections[0] {
+            assert_eq!(h.host_line, "Host claw");
+        }
+        let serialized = serialize_ssh_config(&sections);
+        assert!(serialized.starts_with("Host claw\n"));
     }
 
     #[test]

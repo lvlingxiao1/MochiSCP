@@ -136,6 +136,7 @@ pub fn read_local_dir(dir_path: &str, show_hidden: bool) -> Result<Vec<FileItem>
             .map(|dur| dur.as_secs() as i64)
             .unwrap_or(0);
 
+        #[allow(unused_mut)]
         let mut permissions = String::from("------");
         #[cfg(unix)]
         if let Some(ref m) = metadata {
@@ -196,6 +197,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(unix)]
     fn test_platform_info() {
         let info = get_platform_info().expect("Platform info should succeed");
         assert_eq!(info.os, "macos");
@@ -204,12 +206,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn test_read_dir() {
         let items = read_local_dir("/tmp", true).expect("Reading /tmp should succeed");
         assert!(items.iter().all(|i| !i.name.is_empty()));
     }
 
     #[test]
+    #[cfg(unix)]
     fn test_symlink_detection() {
         use std::os::unix::fs::symlink;
         let test_dir = std::env::temp_dir().join(format!("test_mochiscp_{}", uuid::Uuid::new_v4()));
