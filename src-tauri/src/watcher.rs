@@ -2,7 +2,7 @@ use crate::sftp::SftpPool;
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::fs::{self, File};
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
@@ -16,7 +16,7 @@ pub fn edit_remote_file(
     remote_path: String,
 ) -> Result<String, String> {
     // 1. Prepare local temp directory
-    let mut temp_dir = dirs::cache_dir().unwrap_or_else(|| PathBuf::from("/tmp"));
+    let mut temp_dir = dirs::cache_dir().unwrap_or_else(std::env::temp_dir);
     temp_dir.push("mochiscp");
     temp_dir.push("temp_edits");
     temp_dir.push(&session_id);

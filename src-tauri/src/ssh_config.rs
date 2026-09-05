@@ -2,14 +2,15 @@ use crate::types::{AuthType, SessionConfig};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Expands leading `~` or `~/` to the current user's home directory.
+/// Expands leading `~`, `~/`, or `~\` to the current user's home directory.
 pub fn expand_tilde(path_str: &str) -> PathBuf {
     if path_str == "~" {
         return dirs::home_dir().unwrap_or_else(|| PathBuf::from("~"));
     }
-    if let Some(stripped) = path_str.strip_prefix("~/") {
+    let stripped = path_str.strip_prefix("~/").or_else(|| path_str.strip_prefix("~\\"));
+    if let Some(s) = stripped {
         if let Some(home) = dirs::home_dir() {
-            return home.join(stripped);
+            return home.join(s);
         }
     }
     PathBuf::from(path_str)
@@ -22,9 +23,10 @@ pub fn contract_tilde(path_str: &str) -> String {
         if path_str == home_str {
             return "~".to_string();
         }
-        let prefix = format!("{}/", home_str);
-        if let Some(rest) = path_str.strip_prefix(&prefix) {
-            return format!("~/{}", rest);
+        let prefix_slash = format!("{}/", home_str);
+        let prefix_backslash = format!("{}\\", home_str);
+        if let Some(rest) = path_str.strip_prefix(&prefix_slash).or_else(|| path_str.strip_prefix(&prefix_backslash)) {
+            return format!("~/{}", rest.replace('\\', "/"));
         }
     }
     path_str.to_string()

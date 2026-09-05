@@ -28,12 +28,9 @@ pub fn open_ssh_terminal(
 
     #[cfg(target_os = "windows")]
     {
-        // Try Windows Terminal first, fallback to cmd/powershell
+        // Try Windows Terminal (wt.exe) first, fallback to powershell via cmd/start
         let wt_status = Command::new("wt.exe")
-            .arg("ssh")
-            .arg("-p")
-            .arg(port.to_string())
-            .arg(format!("{}@{}", username, host))
+            .args(["powershell", "-NoExit", "-Command", &ssh_cmd])
             .spawn();
 
         if wt_status.is_err() {

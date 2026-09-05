@@ -212,6 +212,7 @@ fn download_dir_recursive(
 ) -> Result<(), String> {
     fs::create_dir_all(local_dir).map_err(|e| e.to_string())?;
     let entries = sftp.readdir(remote_dir).map_err(|e| e.to_string())?;
+    let remote_dir_str = remote_dir.to_string_lossy().replace('\\', "/");
 
     for (item_path, stat) in entries {
         let name = match item_path.file_name() {
@@ -222,7 +223,8 @@ fn download_dir_recursive(
             continue;
         }
 
-        let sub_remote = remote_dir.join(&name);
+        let sub_remote_str = format!("{}/{}", remote_dir_str.trim_end_matches('/'), name);
+        let sub_remote = std::path::PathBuf::from(&sub_remote_str);
         let sub_local = local_dir.join(&name);
 
         if stat.is_dir() {
@@ -232,7 +234,7 @@ fn download_dir_recursive(
             let _ = download_single_file(
                 app,
                 sftp,
-                &sub_remote.to_string_lossy(),
+                &sub_remote_str,
                 &sub_local.to_string_lossy(),
                 task_id,
                 sz,

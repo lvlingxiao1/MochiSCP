@@ -91,6 +91,8 @@ export const FilePane: React.FC<FilePaneProps> = ({
   // Breadcrumbs parsing
   const pathSegments = useMemo(() => {
     if (!currentPath) return [];
+    const isWindows = currentPath.includes('\\') || /^[a-zA-Z]:/.test(currentPath);
+    const separator = isWindows ? '\\' : '/';
     const normalized = currentPath.replace(/\\/g, '/');
     const parts = normalized.split('/').filter(Boolean);
     const segments: { name: string; fullPath: string }[] = [];
@@ -100,11 +102,12 @@ export const FilePane: React.FC<FilePaneProps> = ({
       if (accum === '/' || accum === '') {
         accum += parts[i];
       } else {
-        accum += (currentPath.includes('\\') ? '\\' : '/') + parts[i];
+        accum += separator + parts[i];
       }
+      const fullPath = isWindows && i === 0 && /^[a-zA-Z]:$/.test(accum) ? accum + '\\' : accum;
       segments.push({
         name: parts[i],
-        fullPath: accum,
+        fullPath,
       });
     }
     return segments;
@@ -151,7 +154,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
   };
 
   const handleGoUp = () => {
-    if (currentPath === '/' || currentPath === '') return;
+    if (currentPath === '/' || currentPath === '' || /^[a-zA-Z]:[/\\]?$/.test(currentPath)) return;
     const separator = currentPath.includes('\\') ? '\\' : '/';
     const parts = currentPath.split(separator).filter(Boolean);
     if (parts.length <= 1) {
@@ -159,7 +162,7 @@ export const FilePane: React.FC<FilePaneProps> = ({
     } else {
       parts.pop();
       const parent = (currentPath.startsWith('/') ? '/' : '') + parts.join(separator);
-      onNavigate(parent);
+      onNavigate(parent.endsWith(':') ? parent + separator : parent);
     }
   };
 
@@ -476,19 +479,26 @@ export const FilePane: React.FC<FilePaneProps> = ({
               title="Click to edit path directly"
               className="flex items-center gap-1 text-xs font-mono text-stone-500 cursor-text hover:bg-rose-50/60 px-1 py-0.5 rounded overflow-x-auto whitespace-nowrap scrollbar-none"
             >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate(currentPath.startsWith('/') ? '/' : 'C:\\');
-                }}
-                className="hover:text-rose-600 text-stone-500 shrink-0 font-bold"
-              >
-                /
-              </button>
-              {pathSegments.map((seg) => (
+              {/* Unix Root button */}
+              {currentPath.startsWith('/') && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate('/');
+                  }}
+                  className="hover:text-rose-600 text-stone-500 shrink-0 font-bold"
+                >
+                  /
+                </button>
+              )}
+              {pathSegments.map((seg, idx) => (
                 <React.Fragment key={seg.fullPath}>
-                  <span className="text-pink-300">/</span>
+                  {(currentPath.startsWith('/') || idx > 0) && (
+                    <span className="text-pink-300">
+                      {currentPath.includes('\\') ? '\\' : '/'}
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => {

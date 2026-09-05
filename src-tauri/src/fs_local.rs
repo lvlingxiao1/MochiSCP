@@ -37,7 +37,7 @@ pub fn get_local_drives() -> Result<Vec<DriveInfo>, String> {
             let drive_path = format!("{}:\\", c as char);
             if Path::new(&drive_path).exists() {
                 drives.push(DriveInfo {
-                    name: format!("Drive ({}:)", c as char),
+                    name: format!("{}:", c as char),
                     mount_point: drive_path,
                     total_space: None,
                     available_space: None,
