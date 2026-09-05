@@ -42,7 +42,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
     }
     return 'new';
   });
-  const [name, setName] = useState('New Session');
+  const [name, setName] = useState('');
   const [host, setHost] = useState('');
   const [port, setPort] = useState(22);
   const [username, setUsername] = useState('root');
@@ -88,7 +88,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
     if (!isOpen) return;
 
     if (selectedId === 'new') {
-      setName('New Session');
+      setName('');
       setHost('');
       setPort(22);
       setUsername('root');
@@ -122,17 +122,27 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   if (!isOpen) return null;
 
   const handleSave = async () => {
-    if (!name.trim() || !host.trim() || !username.trim()) {
-      setErrorMsg('Please fill in Session Name, Host, and Username.');
+    const targetAlias = name.trim();
+    if (!targetAlias || !host.trim() || !username.trim()) {
+      setErrorMsg('Please fill in Host Alias, HostName, and Username.');
+      return;
+    }
+    if (/\s/.test(targetAlias)) {
+      setErrorMsg('Host Alias cannot contain spaces. Use hyphens or underscores (e.g. "my-server").');
       return;
     }
 
     setIsSaving(true);
     setErrorMsg(null);
     try {
+      // If renaming an existing host alias, delete the old host alias first
+      if (selectedId !== 'new' && selectedId !== targetAlias) {
+        await onDeleteSession(selectedId);
+      }
+
       const config: SessionConfig = {
-        id: selectedId === 'new' ? crypto.randomUUID() : selectedId,
-        name: name.trim(),
+        id: targetAlias,
+        name: targetAlias,
         host: host.trim(),
         port: Number(port) || 22,
         username: username.trim(),
@@ -153,17 +163,26 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   };
 
   const handleConnectClick = async () => {
-    if (!host.trim() || !username.trim()) {
-      setErrorMsg('Host and Username are required to connect.');
+    const targetAlias = name.trim() || host.trim();
+    if (!targetAlias || !host.trim() || !username.trim()) {
+      setErrorMsg('Host Alias, HostName, and Username are required to connect.');
+      return;
+    }
+    if (/\s/.test(targetAlias)) {
+      setErrorMsg('Host Alias cannot contain spaces. Use hyphens or underscores (e.g. "my-server").');
       return;
     }
 
     setIsConnecting(true);
     setErrorMsg(null);
     try {
+      if (selectedId !== 'new' && selectedId !== targetAlias) {
+        await onDeleteSession(selectedId);
+      }
+
       const config: SessionConfig = {
-        id: selectedId === 'new' ? crypto.randomUUID() : selectedId,
-        name: name.trim() || host.trim(),
+        id: targetAlias,
+        name: targetAlias,
         host: host.trim(),
         port: Number(port) || 22,
         username: username.trim(),
@@ -190,9 +209,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       <div className="w-full max-w-3xl bg-white border border-pink-100 rounded-2xl shadow-2xl shadow-rose-950/10 overflow-hidden flex flex-col h-[520px]">
         {/* Header */}
         <div className="h-12 border-b border-pink-100 px-4 flex items-center justify-between bg-rose-50/50">
-          <div className="flex items-center gap-2 font-semibold text-sm text-stone-800">
-            <Server className="w-4 h-4 text-rose-500" />
-            <span>Session Manager</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 font-semibold text-sm text-stone-800">
+              <Server className="w-4 h-4 text-rose-500" />
+              <span>SSH Profiles</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium border border-rose-200">
+              ~/.ssh/config
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -215,7 +239,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               }`}
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>New Connection</span>
+              <span>New Host Profile</span>
             </button>
 
             <div className="flex-1 overflow-y-auto space-y-1 pr-1">
@@ -281,13 +305,15 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1">
-                <label className="text-xs text-stone-600 font-medium">Session Name</label>
+                <label className="text-xs text-stone-600 font-medium">
+                  Host Alias <span className="text-stone-400 font-normal">(Host in ~/.ssh/config)</span>
+                </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. AWS Production"
-                  className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
+                  placeholder="e.g. myserver or web-prod"
+                  className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                 />
               </div>
 
@@ -311,7 +337,9 @@ export const SessionModal: React.FC<SessionModalProps> = ({
 
             <div className="grid grid-cols-4 gap-3">
               <div className="col-span-3 space-y-1">
-                <label className="text-xs text-stone-600 font-medium">Host / IP</label>
+                <label className="text-xs text-stone-600 font-medium">
+                  HostName <span className="text-stone-400 font-normal">(Server IP or Domain)</span>
+                </label>
                 <input
                   type="text"
                   value={host}
@@ -333,7 +361,9 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-stone-600 font-medium">Username</label>
+              <label className="text-xs text-stone-600 font-medium">
+                User <span className="text-stone-400 font-normal">(SSH Username)</span>
+              </label>
               <input
                 type="text"
                 value={username}
@@ -387,17 +417,19 @@ export const SessionModal: React.FC<SessionModalProps> = ({
               ) : (
                 <div className="space-y-2 pt-1">
                   <div className="space-y-1">
-                    <label className="text-xs text-stone-600 font-medium">Private Key File Path</label>
+                    <label className="text-xs text-stone-600 font-medium">
+                      IdentityFile <span className="text-stone-400 font-normal">(Private Key File Path)</span>
+                    </label>
                     <input
                       type="text"
                       value={keyPath}
                       onChange={(e) => setKeyPath(e.target.value)}
-                      placeholder="/Users/username/.ssh/id_rsa or id_ed25519"
+                      placeholder="~/.ssh/id_ed25519 or ~/.ssh/id_rsa"
                       className="w-full bg-rose-50/30 border border-pink-200/90 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono focus:outline-none focus:border-rose-400 focus:bg-white focus:ring-1 focus:ring-rose-200"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-stone-600 font-medium">Key Passphrase (Optional)</label>
+                    <label className="text-xs text-stone-600 font-medium">Key Passphrase (Optional, Stored in Apple Keychain)</label>
                     <input
                       type="password"
                       value={secret}

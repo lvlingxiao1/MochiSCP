@@ -200,19 +200,19 @@ export function App() {
     };
   }, [localPath, remotePath, isConnected, loadLocalDirectory, loadRemoteDirectory, addToast]);
 
-  // Session Handlers
+  // Session Handlers (Directly backed by ~/.ssh/config)
   const handleSaveSession = async (session: SessionConfig, secret?: string) => {
     await ipc.saveSession(session, secret);
     const updated = await ipc.listSessions();
     setSessions(updated);
-    addToast('success', `Session "${session.name}" saved.`);
+    addToast('success', `Host profile "${session.name}" saved to ~/.ssh/config`);
   };
 
   const handleDeleteSession = async (sessionId: string) => {
     await ipc.deleteSession(sessionId);
     const updated = await ipc.listSessions();
     setSessions(updated);
-    addToast('info', 'Session deleted.');
+    addToast('info', `Host profile "${sessionId}" removed from ~/.ssh/config`);
   };
 
   const handleConnect = async (session: SessionConfig, secret?: string) => {

@@ -50,14 +50,14 @@ impl SftpPool {
                 if key_path_str.is_empty() {
                     return Err("Private key path is required".to_string());
                 }
-                let key_path = Path::new(key_path_str);
-                if !key_path.exists() {
-                    return Err(format!("Private key file not found: {}", key_path_str));
+                let expanded_path = crate::ssh_config::expand_tilde(key_path_str);
+                if !expanded_path.exists() {
+                    return Err(format!("Private key file not found: {} ({})", key_path_str, expanded_path.display()));
                 }
                 sess.userauth_pubkey_file(
                     &config.username,
                     None,
-                    key_path,
+                    &expanded_path,
                     secret.as_deref(),
                 )
                 .map_err(|e| format!("Public key authentication failed: {}", e))?;

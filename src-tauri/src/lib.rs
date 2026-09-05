@@ -1,6 +1,7 @@
 mod fs_local;
 mod session;
 mod sftp;
+mod ssh_config;
 mod terminal;
 mod transfer;
 mod types;

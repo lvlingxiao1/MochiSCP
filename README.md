@@ -28,6 +28,7 @@
 
 - 🌸 **Warm & Sweet Aesthetic**: Delightful pastel pink ("Sakura Rose") theme, soft frosted glassmorphism, and clear high-contrast typography.
 - ⚡ **Ultra-Lightweight & Blazing Fast**: Built with **Tauri 2 + Rust + React 19**, with a standalone app bundle size of only ~**12 MB** (installer DMG ~4.5 MB), compared to ~150–200 MB for typical Electron-based tools.
+- 📂 **Direct `~/.ssh/config` Integration**: Zero proprietary session databases or lock-in. MochiSCP reads and writes directly to your standard `~/.ssh/config`. Existing terminal hosts appear automatically, and new or edited profiles are saved straight into `~/.ssh/config` with automatic safety backups (`config.bak`) and comments/directive preservation.
 - 🔄 **Classic Dual-Pane Interface**: Classical Norton Commander / WinSCP dual-pane layout (Local filesystem on the left, Remote SFTP on the right).
 - 🖱️ **Smooth Drag & Drop**: Native drag-and-drop between panes for instant uploads and downloads.
 - 📝 **Remote File Edit & Auto-Sync**: Double-click remote files to open directly in your favorite editor (VS Code, Cursor, Zed, TextEdit); edits auto-sync back to the server upon save!
